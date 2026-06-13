@@ -28,13 +28,27 @@ const INTENTS: Intent[] = ["BOOK", "CANCEL", "RESCHEDULE", "QUESTION", "UNKNOWN"
 function parseArgs(argv: string[]) {
   const models: string[] = [];
   let limit = Infinity;
-  let delayMs = 300;
+  let concurrency = 1;
   for (let i = 0; i < argv.length; i++) {
     if (argv[i] === "--model") models.push(argv[++i]);
     else if (argv[i] === "--limit") limit = parseInt(argv[++i], 10);
-    else if (argv[i] === "--delay") delayMs = parseInt(argv[++i], 10);
+    else if (argv[i] === "--concurrency") concurrency = parseInt(argv[++i], 10);
   }
-  return { models, limit, delayMs };
+  return { models, limit, concurrency };
+}
+
+/** Run `fn` over items with up to `n` in flight, preserving result order. */
+async function mapPool<T, R>(items: T[], n: number, fn: (t: T) => Promise<R>): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let idx = 0;
+  async function worker() {
+    while (idx < items.length) {
+      const i = idx++;
+      results[i] = await fn(items[i]);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(n, items.length)) }, worker));
+  return results;
 }
 
 function loadDataset(limit: number): LabeledExample[] {
@@ -44,12 +58,11 @@ function loadDataset(limit: number): LabeledExample[] {
 }
 
 const fieldEq = (a: unknown, b: unknown): boolean => (a ?? null) === (b ?? null);
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
 
 type IntentMetric = { precision: number; recall: number; f1: number; support: number };
 
-async function scoreParser(parser: Parser, data: LabeledExample[], delayMs: number) {
+async function scoreParser(parser: Parser, data: LabeledExample[], concurrency: number) {
   const correct: Record<Field, number> = { intent: 0, service: 0, day: 0, time: 0 };
   let fullyCorrect = 0;
   const misses: { text: string; field: Field; expected: unknown; got: unknown }[] = [];
@@ -57,11 +70,11 @@ async function scoreParser(parser: Parser, data: LabeledExample[], delayMs: numb
   const confusion: Record<Intent, Record<Intent, number>> = Object.fromEntries(
     INTENTS.map((e) => [e, Object.fromEntries(INTENTS.map((p) => [p, 0])) as Record<Intent, number>]),
   ) as Record<Intent, Record<Intent, number>>;
-  const isLlm = parser.name.startsWith("llm:");
 
   const t0 = Date.now();
-  for (const ex of data) {
-    const got = await parser.parse(ex.text);
+  const preds = await mapPool(data, concurrency, (ex) => Promise.resolve(parser.parse(ex.text)));
+  data.forEach((ex, i) => {
+    const got = preds[i];
     confusion[ex.expected.intent][got.intent]++;
     let allOk = true;
     for (const f of FIELDS) {
@@ -72,8 +85,7 @@ async function scoreParser(parser: Parser, data: LabeledExample[], delayMs: numb
       }
     }
     if (allOk) fullyCorrect++;
-    if (isLlm && delayMs) await sleep(delayMs);
-  }
+  });
 
   const n = data.length;
   const perIntent: Record<Intent, IntentMetric> = {} as Record<Intent, IntentMetric>;
@@ -140,7 +152,7 @@ function printParser(r: Awaited<ReturnType<typeof scoreParser>>) {
 }
 
 async function main() {
-  const { models, limit, delayMs } = parseArgs(process.argv.slice(2));
+  const { models, limit, concurrency } = parseArgs(process.argv.slice(2));
   const data = loadDataset(limit);
 
   const parsers: Parser[] = [{ name: "rule-baseline", parse: ruleBasedParse }];
@@ -158,7 +170,7 @@ async function main() {
 
   const summaries = [];
   for (const parser of parsers) {
-    const r = await scoreParser(parser, data, delayMs);
+    const r = await scoreParser(parser, data, concurrency);
     printParser(r);
     summaries.push({
       parser: r.name,

@@ -1,0 +1,208 @@
+{
+  "generatedAt": "2026-06-13T12:56:22.324Z",
+  "datasetSize": 109,
+  "results": [
+    {
+      "parser": "rule-baseline",
+      "n": 109,
+      "intent": 0.8990825688073395,
+      "service": 1,
+      "day": 0.981651376146789,
+      "time": 0.9174311926605505,
+      "fullMatch": 0.8073394495412844,
+      "ci95": {
+        "intent": {
+          "lo": 0.8282813962673976,
+          "hi": 0.9427108619068929
+        },
+        "service": {
+          "lo": 0.9659558177126165,
+          "hi": 0.9999999999999999
+        },
+        "day": {
+          "lo": 0.9355541544090205,
+          "hi": 0.9949537433875368
+        },
+        "time": {
+          "lo": 0.8504863891311362,
+          "hi": 0.9559537889592135
+        },
+        "fullMatch": {
+          "lo": 0.7233590330958399,
+          "hi": 0.8703936254981539
+        }
+      },
+      "seconds": 0,
+      "perIntent": {
+        "BOOK": {
+          "precision": 0.918918918918919,
+          "recall": 0.85,
+          "f1": 0.8831168831168831,
+          "support": 40
+        },
+        "CANCEL": {
+          "precision": 1,
+          "recall": 0.875,
+          "f1": 0.9333333333333333,
+          "support": 16
+        },
+        "RESCHEDULE": {
+          "precision": 1,
+          "recall": 0.9444444444444444,
+          "f1": 0.9714285714285714,
+          "support": 18
+        },
+        "QUESTION": {
+          "precision": 0.95,
+          "recall": 0.9047619047619048,
+          "f1": 0.9268292682926829,
+          "support": 21
+        },
+        "UNKNOWN": {
+          "precision": 0.6666666666666666,
+          "recall": 1,
+          "f1": 0.8,
+          "support": 14
+        }
+      },
+      "confusion": {
+        "BOOK": {
+          "BOOK": 34,
+          "CANCEL": 0,
+          "RESCHEDULE": 0,
+          "QUESTION": 1,
+          "UNKNOWN": 5
+        },
+        "CANCEL": {
+          "BOOK": 1,
+          "CANCEL": 14,
+          "RESCHEDULE": 0,
+          "QUESTION": 0,
+          "UNKNOWN": 1
+        },
+        "RESCHEDULE": {
+          "BOOK": 1,
+          "CANCEL": 0,
+          "RESCHEDULE": 17,
+          "QUESTION": 0,
+          "UNKNOWN": 0
+        },
+        "QUESTION": {
+          "BOOK": 1,
+          "CANCEL": 0,
+          "RESCHEDULE": 0,
+          "QUESTION": 19,
+          "UNKNOWN": 1
+        },
+        "UNKNOWN": {
+          "BOOK": 0,
+          "CANCEL": 0,
+          "RESCHEDULE": 0,
+          "QUESTION": 0,
+          "UNKNOWN": 14
+        }
+      }
+    },
+    {
+      "parser": "llm:google/gemma-4-31b-it:free",
+      "n": 109,
+      "intent": 0.9908256880733946,
+      "service": 1,
+      "day": 0.9541284403669725,
+      "time": 1,
+      "fullMatch": 0.944954128440367,
+      "ci95": {
+        "intent": {
+          "lo": 0.9498531473123014,
+          "hi": 0.9983787104422853
+        },
+        "service": {
+          "lo": 0.9659558177126165,
+          "hi": 0.9999999999999999
+        },
+        "day": {
+          "lo": 0.8970861750742003,
+          "hi": 0.980249842848268
+        },
+        "time": {
+          "lo": 0.9659558177126165,
+          "hi": 0.9999999999999999
+        },
+        "fullMatch": {
+          "lo": 0.8850813031908665,
+          "hi": 0.9745307547735721
+        }
+      },
+      "seconds": 427.1,
+      "perIntent": {
+        "BOOK": {
+          "precision": 0.975609756097561,
+          "recall": 1,
+          "f1": 0.9876543209876543,
+          "support": 40
+        },
+        "CANCEL": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "support": 16
+        },
+        "RESCHEDULE": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "support": 18
+        },
+        "QUESTION": {
+          "precision": 1,
+          "recall": 0.9523809523809523,
+          "f1": 0.975609756097561,
+          "support": 21
+        },
+        "UNKNOWN": {
+          "precision": 1,
+          "recall": 1,
+          "f1": 1,
+          "support": 14
+        }
+      },
+      "confusion": {
+        "BOOK": {
+          "BOOK": 40,
+          "CANCEL": 0,
+          "RESCHEDULE": 0,
+          "QUESTION": 0,
+          "UNKNOWN": 0
+        },
+        "CANCEL": {
+          "BOOK": 0,
+          "CANCEL": 16,
+          "RESCHEDULE": 0,
+          "QUESTION": 0,
+          "UNKNOWN": 0
+        },
+        "RESCHEDULE": {
+          "BOOK": 0,
+          "CANCEL": 0,
+          "RESCHEDULE": 18,
+          "QUESTION": 0,
+          "UNKNOWN": 0
+        },
+        "QUESTION": {
+          "BOOK": 1,
+          "CANCEL": 0,
+          "RESCHEDULE": 0,
+          "QUESTION": 20,
+          "UNKNOWN": 0
+        },
+        "UNKNOWN": {
+          "BOOK": 0,
+          "CANCEL": 0,
+          "RESCHEDULE": 0,
+          "QUESTION": 0,
+          "UNKNOWN": 14
+        }
+      }
+    }
+  ]
+}

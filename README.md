@@ -20,11 +20,16 @@ bookable action — no LLM:
 
 ![Free-text intake parsed into bookable slots](docs/intake.png)
 
-**Measured so far** (109-example benchmark, intent classification, 5-fold held-out CV):
-the rule baseline scores **89.9%** [82.8–94.3] and a classical-ML baseline (Naive Bayes)
-**79.8%** [71.3–86.3]. The hand-rules win — so the bar an LLM has to clear is the rules, not
-ML. (The intervals overlap, so honestly: "rules are at least as good," not a conclusive win.
-The LLM-vs-rules run on this set is the next experiment.)
+**Measured on a 109-example benchmark — intent accuracy [95% CI]:** classical-ML Naive Bayes
+**79.8%** [71.3–86.3] · hand-rules **89.9%** [82.8–94.3] · a free 31B LLM (Gemma) **99.1%**
+[95.0–99.8]. So here the order is **ML < rules < LLM**: classical ML doesn't beat the rules,
+but the LLM genuinely does — and its interval clears the rules', so it's a real win, not noise.
+On the strict all-four-fields match it's rules 80.7% vs LLM **94.5%** [88.5–97.5].
+
+The honest catch: the LLM wins **on accuracy**, at a cost the rules don't have — ~4 s/call and
+an external dependency, versus ~0 ms offline. And it isn't uniformly better (the rules still
+edge it on date extraction). deskbench's point is that this was **measured**, not assumed
+either way.
 
 ## Why this exists
 
@@ -119,16 +124,30 @@ conclusive win — but it definitely gives no reason to prefer ML. So on this ta
 doesn't beat the `$0` rules, which is exactly the kind of result deskbench exists to surface:
 the bar an LLM has to clear is the rules, not ML. Full numbers in `eval/results/ml-baseline.json`.
 
-**LLM comparison (separate, older run):** on the earlier 35-example set, `Gemma-4-31b:free`
-scored 100% full match vs. that set's 82.9% baseline — but that was a different, smaller
-benchmark, so it is **not** comparable to the table above; a re-run on the 109-example set is
-pending (gated on LLM quota). A small-model run (llama-3.2-3b) was drowned by free-tier
-rate-limit 429s and is deliberately not reported. Reproduce the LLM path with
-`npm run eval -- --model google/gemma-4-31b-it:free` (needs `OPENAI_API_KEY`).
+**LLM vs. rules (full benchmark).** `npm run eval -- --model google/gemma-4-31b-it:free`
+(needs `OPENAI_API_KEY`) scores a free 31B LLM on the same 109 examples. Result
+(`eval/results/llm-comparison.json`):
 
-**The honest caveats still stand:** the set is author-labeled (a model can score for agreeing
-with the labeler on ambiguous items), and the LLM's cost is not just dollars — it answers in
-seconds with an external dependency, where the baseline answers in ~0 ms offline.
+| parser                 | intent | service |  day  |  time | full match | per call |
+|------------------------|-------:|--------:|------:|------:|-----------:|---------:|
+| rule baseline          |  89.9% |   100%  | 98.2% | 91.7% |   80.7%    |   ~0 ms  |
+| Gemma-4-31b (free LLM) |  99.1% |   100%  | 95.4% |  100% |   94.5%    |   ~4 s   |
+
+The LLM **wins, and it's real**: on intent its CI [95.0–99.8] clears the rules' [82.8–94.3],
+and on full match [88.5–97.5] vs [72.3–87.0] the intervals don't overlap — not a coin flip at
+n=109. So this is the case where deskbench says *yes, the LLM is worth it* — on accuracy.
+
+The honest counterweights, stated up front:
+- **Cost isn't just dollars.** ~4 s/call and an external dependency vs. the rules' ~0 ms,
+  offline, deterministic. For a busy front desk that latency and that dependency are real.
+- **It isn't uniformly better.** The rules still beat it on date extraction (98.2% vs 95.4%) —
+  a regex is simply more reliable than an LLM at "this evening" → null.
+- **The set is author-labeled.** On ambiguous items the LLM partly scores for agreeing with the
+  labeler, not against human ground truth (mitigated by the independent cross-check above, but
+  not eliminated — all labelers are AI).
+
+A small-model run (llama-3.2-3b) for the "model class vs. information" angle was drowned by
+free-tier rate-limit 429s and is deliberately not reported.
 
 ## Tech stack
 
