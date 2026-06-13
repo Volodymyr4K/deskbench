@@ -36,3 +36,6 @@ eval/results/*.raw.json
 
 # Prisma generated client
 /app/generated/
+
+# TypeScript build info
+*.tsbuildinfo
