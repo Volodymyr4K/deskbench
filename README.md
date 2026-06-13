@@ -6,8 +6,8 @@ A front-desk assistant for small service businesses — built around one idea:
 **before you ship "AI", measure whether you actually need it.**
 
 deskbench handles the routine front-desk work of a salon, clinic, repair shop, or
-barbershop — booking appointments, rescheduling, reminders, and answering common
-client questions. But the product is not the bot. The product is the **discipline of
+barbershop — booking, rescheduling, cancellations, and no-show tracking. But the product is
+not the bot. The product is the **discipline of
 measuring where a large language model genuinely beats plain machine learning and
 simple rule-based logic, and where it does not.**
 
@@ -48,7 +48,8 @@ simpler approach stays, and we say so out loud.
 
 - **Booking** — clients request appointments; the system proposes open slots.
 - **Reschedule / cancel** — handled conversationally, with the calendar as source of truth.
-- **Reminders** — reduce no-shows via timely notifications.
+- **Reminders** *(not built — the no-show measurement below comes first)* — reduce no-shows
+  via timely notifications.
 - **Routine Q&A** — answer common client questions (hours, prices, location) without staff.
 - **Operator view** — a simple, readable calendar for non-technical staff, not a CRM monster.
 
@@ -182,37 +183,36 @@ rule-based parser, no LLM.
 
 ## Status
 
-**Early development — honest snapshot:**
+A working demo, not a shipped product — but the parts that exist are real, tested, and green
+in CI. This README tracks the real state, not an aspirational one.
 
-- **Done:** data model (Prisma/Postgres); rule-based slot-availability engine
-  (`lib/availability.ts`); operator board (`app/page.tsx`) — per-staff appointments with
-  book/cancel; rule-based request parser (`lib/parse/rules.ts`); LLM parser path
-  (`lib/parse/llm.ts`) behind the same `ParsedRequest` contract; the **evaluation harness**
-  (`eval/`) scoring baseline vs. LLM on a curated benchmark (numbers above); a
-  full intake loop on the rule parser (`lib/parse/`) — book, cancel, and reschedule from
-  free text; day navigation (any date) with a booking confirm step that captures client
-  name/phone (or walk-in); an operator reschedule mode (move an appointment to a new
-  slot/staff); a unit-test suite (`npm test`, 28 tests over availability, parser, resolver,
-  date helpers); and Playwright e2e (`npm run e2e`) that drives book / cancel / reschedule /
-  intake in a real browser against an isolated test database; appointment lifecycle
-  (mark completed / no-show on past appointments) and a `/stats` view that measures the
-  business — no-show rate, cancellation rate, status breakdown, and manual-vs-assistant
-  source split (`lib/stats.ts`, unit-tested).
-- **Next:** grow the benchmark and have someone other than the author label it; add more
-  models (incl. a small one once rate limits allow) for the model-class comparison; wire the
-  parser into an actual booking conversation and measure hallucinated-slot rate and real
-  cost per conversation end-to-end.
-- **Timezone:** all wall-clock reasoning (working hours, slots, display, day navigation)
-  runs in each business's IANA timezone (`Business.timezone`, e.g. `Europe/Kyiv`); stored
-  `startAt`/`endAt` are UTC instants. DST-correct via Luxon. So the board is correct no
-  matter what timezone the server runs in.
-- **Known simplifications:** single demo business; the benchmark is curated by hand, not
-  drawn from real traffic; **no auth yet** — the server actions trust the IDs in the form
-  and do no tenant/ownership checks, fine for a single-operator demo but a real deployment
-  needs authentication and tenant scoping; the overlap check on booking is best-effort, not
-  race-proof (no DB constraint/transaction).
+**Built & tested**
 
-This README tracks the real state, not an aspirational one.
+- Data model (Prisma/Postgres) with **DST-correct per-business timezone** — all wall-clock
+  reasoning runs in `Business.timezone`; stored times are UTC instants (Luxon).
+- Operator board: per-staff day view, day navigation, book / cancel / reschedule, client
+  capture, mark completed / no-show.
+- Free-text intake on a `$0` rule parser (`lib/parse/`): book / cancel / reschedule.
+- `/stats`: no-show rate, cancellation rate, status breakdown, manual-vs-assistant source split.
+- **Evaluation harness** (`eval/`): 109-example benchmark, independently cross-labeled; rule +
+  classical-ML (Naive Bayes) + LLM parsers scored with per-intent precision/recall/F1, an
+  intent confusion matrix, and Wilson 95% CIs; 5-fold held-out CV for the ML/rules comparison.
+- Quality: **39 unit tests + 4 Playwright e2e**, green in GitHub Actions CI.
+
+**Deliberately not built (and why)**
+
+- **Reminders / notifications** — the no-show *measurement* comes first (you can't claim to
+  reduce what you don't measure); the sending side needs scheduling infra and is out of scope
+  for a demo.
+- **Auth / multi-tenant isolation** — off-thesis here and the demo is single-operator; a real
+  deployment needs it.
+- Booking's overlap check is best-effort, not race-proof (no DB constraint / transaction).
+
+**Honest caveats:** the benchmark is hand-authored (cross-checked by independent AI labelers,
+but not human ground truth) and covers a single demo business.
+
+**Optional next:** route intake through the LLM end-to-end to measure a hallucinated-slot rate
+on full conversations.
 
 ## License
 
