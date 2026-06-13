@@ -1,42 +1,39 @@
-// Small, pure date helpers for the operator board's day navigation.
-// Dates are handled at local midnight (matching the rest of the app's
-// server-local-time simplification).
+import { DateTime } from "luxon";
+import { type CalendarDay, todayInZone } from "@/lib/tz";
 
-export function startOfDay(d: Date): Date {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x;
-}
+// Calendar-day helpers for the board's day navigation. A day is a tz-agnostic
+// {year,month,day}; the timezone only matters for "what day is it now" and for
+// turning a day into instants (see lib/tz.ts).
 
-/** Parse a `YYYY-MM-DD` param to a local-midnight Date; fall back to today. */
-export function parseDateParam(s: string | undefined): Date {
+/** Parse a `YYYY-MM-DD` param to a CalendarDay; fall back to today in `tz`. */
+export function parseDateParam(s: string | undefined, tz: string): CalendarDay {
   if (s) {
     const m = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if (m) {
-      const y = +m[1];
-      const mo = +m[2];
-      const d = +m[3];
-      if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
-        const date = new Date(y, mo - 1, d);
-        // Reject overflow (e.g. 2026-02-31 rolling into March).
-        if (date.getMonth() === mo - 1 && date.getDate() === d) return date;
+      const year = +m[1];
+      const month = +m[2];
+      const day = +m[3];
+      // Reject impossible dates (e.g. 2026-02-31) by round-tripping through Luxon.
+      const dt = DateTime.fromObject({ year, month, day });
+      if (dt.isValid && dt.year === year && dt.month === month && dt.day === day) {
+        return { year, month, day };
       }
     }
   }
-  return startOfDay(new Date());
+  return todayInZone(tz);
 }
 
-/** Serialize a Date to a `YYYY-MM-DD` param in local time. */
-export function toDateParam(d: Date): string {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+/** Serialize a CalendarDay to a `YYYY-MM-DD` param. */
+export function toDateParam(day: CalendarDay): string {
+  return `${day.year}-${String(day.month).padStart(2, "0")}-${String(day.day).padStart(2, "0")}`;
 }
 
-export function addDays(d: Date, n: number): Date {
-  const x = startOfDay(d);
-  x.setDate(x.getDate() + n);
-  return x;
+/** Calendar arithmetic (timezone-independent). */
+export function addDays(day: CalendarDay, n: number): CalendarDay {
+  const dt = DateTime.fromObject({ year: day.year, month: day.month, day: day.day }).plus({ days: n });
+  return { year: dt.year, month: dt.month, day: dt.day };
 }
 
-export function isToday(d: Date): boolean {
-  return toDateParam(d) === toDateParam(new Date());
+export function isToday(day: CalendarDay, tz: string): boolean {
+  return toDateParam(day) === toDateParam(todayInZone(tz));
 }

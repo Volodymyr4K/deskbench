@@ -1,12 +1,13 @@
 import { PrismaClient, AppointmentStatus, AppointmentSource } from "../app/generated/prisma";
+import { zonedDayMinutesToInstant, todayInZone } from "../lib/tz";
 
 const prisma = new PrismaClient();
 
-/** Build a Date for today at a given local hour:minute. */
+const TZ = "Europe/Kyiv";
+
+/** Build the instant for today at a given wall-clock hour:minute in the demo tz. */
 function todayAt(hour: number, minute = 0): Date {
-  const d = new Date();
-  d.setHours(hour, minute, 0, 0);
-  return d;
+  return zonedDayMinutesToInstant(todayInZone(TZ), hour * 60 + minute, TZ);
 }
 
 async function main() {

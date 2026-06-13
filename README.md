@@ -123,12 +123,15 @@ rule-based parser, no LLM.
   models (incl. a small one once rate limits allow) for the model-class comparison; wire the
   parser into an actual booking conversation and measure hallucinated-slot rate and real
   cost per conversation end-to-end.
-- **Known simplifications:** times are computed in the server's local timezone (per-business
-  timezone + DST is a real TODO); single demo business; the benchmark is curated by hand,
-  not drawn from real traffic; **no auth yet** — the server actions trust the IDs in the
-  form and do no tenant/ownership checks, fine for a single-operator demo but a real
-  deployment needs authentication and tenant scoping; the overlap check on booking is
-  best-effort, not race-proof (no DB constraint/transaction).
+- **Timezone:** all wall-clock reasoning (working hours, slots, display, day navigation)
+  runs in each business's IANA timezone (`Business.timezone`, e.g. `Europe/Kyiv`); stored
+  `startAt`/`endAt` are UTC instants. DST-correct via Luxon. So the board is correct no
+  matter what timezone the server runs in.
+- **Known simplifications:** single demo business; the benchmark is curated by hand, not
+  drawn from real traffic; **no auth yet** — the server actions trust the IDs in the form
+  and do no tenant/ownership checks, fine for a single-operator demo but a real deployment
+  needs authentication and tenant scoping; the overlap check on booking is best-effort, not
+  race-proof (no DB constraint/transaction).
 
 This README tracks the real state, not an aspirational one.
 

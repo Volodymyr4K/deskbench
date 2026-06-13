@@ -4,11 +4,12 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { toDateParam } from "@/lib/date";
+import { instantParts } from "@/lib/tz";
 
 /**
  * Book a slot. Client name/phone are optional: if given, we find-or-create the
  * client (matched by phone within the business) and attach them; otherwise it's
- * a walk-in. Redirects to the board for the slot's day.
+ * a walk-in. Redirects to the board for the slot's day (in the business tz).
  */
 export async function bookSlot(formData: FormData): Promise<void> {
   const businessId = String(formData.get("businessId"));
@@ -21,7 +22,7 @@ export async function bookSlot(formData: FormData): Promise<void> {
   const start = new Date(startISO);
   if (Number.isNaN(start.getTime())) redirect("/");
 
-  const service = await prisma.service.findUniqueOrThrow({ where: { id: serviceId } });
+  const service = await prisma.service.findUniqueOrThrow({ where: { id: serviceId }, include: { business: true } });
   const end = new Date(start.getTime() + service.durationMin * 60_000);
 
   // Best-effort overlap check — NOT race-proof. Two concurrent bookings of the
@@ -54,7 +55,7 @@ export async function bookSlot(formData: FormData): Promise<void> {
     });
   }
 
-  redirect(`/?date=${toDateParam(start)}`);
+  redirect(`/?date=${toDateParam(instantParts(start, service.business.timezone))}`);
 }
 
 /** Mark an appointment cancelled (kept in history, not deleted). */
@@ -73,7 +74,7 @@ export async function rescheduleAppointment(formData: FormData): Promise<void> {
   const start = new Date(newStartISO);
   if (Number.isNaN(start.getTime())) redirect("/");
 
-  const appt = await prisma.appointment.findUniqueOrThrow({ where: { id }, include: { service: true } });
+  const appt = await prisma.appointment.findUniqueOrThrow({ where: { id }, include: { service: true, business: true } });
   const end = new Date(start.getTime() + appt.service.durationMin * 60_000);
 
   // Refuse if the target overlaps another appointment for that staff (not this one).
@@ -93,5 +94,5 @@ export async function rescheduleAppointment(formData: FormData): Promise<void> {
     });
   }
 
-  redirect(`/?date=${toDateParam(start)}`);
+  redirect(`/?date=${toDateParam(instantParts(start, appt.business.timezone))}`);
 }

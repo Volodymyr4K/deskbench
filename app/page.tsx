@@ -4,20 +4,15 @@ import { prisma } from "@/lib/prisma";
 import { ruleBasedParse } from "@/lib/parse/rules";
 import { resolveDay, filterSlotsByTime, appointmentMatchesRequest } from "@/lib/parse/resolve";
 import type { ServiceKey } from "@/lib/parse/types";
-import { parseDateParam, toDateParam, addDays, startOfDay, isToday } from "@/lib/date";
+import { toDateParam, addDays, isToday } from "@/lib/date";
+import { todayInZone, formatTimeInZone, formatDayInZone, formatDateInstantInZone } from "@/lib/tz";
 
 const DEMO_SLUG = "demo";
 
-function fmtTime(d: Date): string {
-  return d.toLocaleTimeString("uk-UA", { hour: "2-digit", minute: "2-digit" });
-}
 function fmtPrice(cents: number): string {
   return new Intl.NumberFormat("uk-UA", { style: "currency", currency: "UAH", maximumFractionDigits: 0 }).format(
     cents / 100,
   );
-}
-function fmtDate(d: Date): string {
-  return d.toLocaleDateString("uk-UA", { weekday: "long", day: "numeric", month: "long" });
 }
 
 type Service = OperatorBoard["services"][number];
@@ -44,7 +39,6 @@ type SP = {
 
 export default async function OperatorBoard({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
-  const boardDate = parseDateParam(sp.date);
 
   // Reschedule mode: an existing appointment is being moved.
   const rescheduling = sp.reschedule
@@ -56,7 +50,7 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
 
   // In reschedule mode the board uses the appointment's own service (its duration).
   const effectiveServiceId = rescheduling?.serviceId ?? sp.service;
-  const board = await getOperatorBoard(DEMO_SLUG, boardDate, effectiveServiceId);
+  const board = await getOperatorBoard(DEMO_SLUG, sp.date, effectiveServiceId);
 
   if (!board) {
     return (
@@ -69,14 +63,16 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
     );
   }
 
-  const { business, services, selectedService, staff } = board;
+  const { business, tz, day, services, selectedService, staff } = board;
+  const fmtTime = (i: Date) => formatTimeInZone(i, tz);
+  const fmtDayInstant = (i: Date) => formatDateInstantInZone(i, tz);
 
   // URL helper that preserves the relevant params and overrides the given ones.
   const withParams = (overrides: Record<string, string | undefined>) => {
     const p = new URLSearchParams();
     const base: Record<string, string | undefined> = {
       service: sp.service,
-      date: toDateParam(boardDate),
+      date: toDateParam(day),
       reschedule: sp.reschedule,
       ...overrides,
     };
@@ -85,8 +81,8 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
   };
   const confirmHref = (staffId: string, serviceId: string, startISO: string) =>
     `/?${new URLSearchParams({ cStaff: staffId, cService: serviceId, cStart: startISO }).toString()}`;
-  const rescheduleHref = (apptId: string, date: Date) =>
-    `/?${new URLSearchParams({ reschedule: apptId, date: toDateParam(date) }).toString()}`;
+  const rescheduleHref = (apptId: string) =>
+    `/?${new URLSearchParams({ reschedule: apptId }).toString()}`;
 
   // Confirm step (only when not rescheduling).
   const confirm =
@@ -104,7 +100,7 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
   type Candidate = { id: string; startAt: Date; serviceName: string; clientName?: string; staffName: string };
   let intake: null | {
     parsed: ReturnType<typeof ruleBasedParse>;
-    resolvedDate: Date;
+    resolvedDay: ReturnType<typeof todayInZone>;
     matched?: Service;
     slotMatches: { staffId: string; staffName: string; slots: Date[] }[];
     candidates: Candidate[];
@@ -112,14 +108,14 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
 
   if (!rescheduling && sp.q && sp.q.trim()) {
     const parsed = ruleBasedParse(sp.q);
-    const resolvedDate = resolveDay(parsed.day, new Date()) ?? startOfDay(new Date());
+    const resolvedDay = resolveDay(parsed.day, tz) ?? todayInZone(tz);
     const matched = matchService(services, parsed.service);
-    const dayBoard = await getOperatorBoard(DEMO_SLUG, resolvedDate, matched?.id);
+    const dayBoard = await getOperatorBoard(DEMO_SLUG, toDateParam(resolvedDay), matched?.id);
 
     const slotMatches =
       parsed.intent === "BOOK" && dayBoard
         ? dayBoard.staff
-            .map((st) => ({ staffId: st.id, staffName: st.name, slots: filterSlotsByTime(st.freeSlots, parsed.time) }))
+            .map((st) => ({ staffId: st.id, staffName: st.name, slots: filterSlotsByTime(st.freeSlots, parsed.time, tz) }))
             .filter((m) => m.slots.length > 0)
         : [];
 
@@ -130,7 +126,7 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
             .filter(
               ({ a }) =>
                 a.status === "BOOKED" &&
-                appointmentMatchesRequest({ startAt: a.startAt, serviceId: a.serviceId }, { time: parsed.time, serviceId: matched?.id }),
+                appointmentMatchesRequest({ startAt: a.startAt, serviceId: a.serviceId }, { time: parsed.time, serviceId: matched?.id }, tz),
             )
             .map(({ a, staffName }) => ({
               id: a.id,
@@ -141,7 +137,7 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
             }))
         : [];
 
-    intake = { parsed, resolvedDate, matched, slotMatches, candidates };
+    intake = { parsed, resolvedDay, matched, slotMatches, candidates };
   }
 
   return (
@@ -150,12 +146,13 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">{business.name}</h1>
           <div className="mt-1 flex items-center gap-2 text-sm text-gray-500">
-            <a href={withParams({ date: toDateParam(addDays(boardDate, -1)) })} className="rounded border border-gray-300 px-1.5 hover:border-gray-500" aria-label="Previous day">‹</a>
-            <span className="capitalize">{fmtDate(boardDate)}</span>
-            <a href={withParams({ date: toDateParam(addDays(boardDate, 1)) })} className="rounded border border-gray-300 px-1.5 hover:border-gray-500" aria-label="Next day">›</a>
-            {!isToday(boardDate) && (
-              <a href={withParams({ date: toDateParam(startOfDay(new Date())) })} className="text-xs text-gray-400 underline hover:text-gray-700">today</a>
+            <a href={withParams({ date: toDateParam(addDays(day, -1)) })} className="rounded border border-gray-300 px-1.5 hover:border-gray-500" aria-label="Previous day">‹</a>
+            <span className="capitalize">{formatDayInZone(day, tz)}</span>
+            <a href={withParams({ date: toDateParam(addDays(day, 1)) })} className="rounded border border-gray-300 px-1.5 hover:border-gray-500" aria-label="Next day">›</a>
+            {!isToday(day, tz) && (
+              <a href={withParams({ date: toDateParam(todayInZone(tz)) })} className="text-xs text-gray-400 underline hover:text-gray-700">today</a>
             )}
+            <span className="text-xs text-gray-300">{tz}</span>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -183,7 +180,7 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
             Rescheduling <strong>{rescheduling.service.name}</strong>
             {rescheduling.client ? ` for ${rescheduling.client.name}` : ""} — currently{" "}
             <span className="tabular-nums">{fmtTime(rescheduling.startAt)}</span> on{" "}
-            <span className="capitalize">{fmtDate(rescheduling.startAt)}</span>. Pick a new slot below
+            <span className="capitalize">{fmtDayInstant(rescheduling.startAt)}</span>. Pick a new slot below
             (navigate days if needed).
           </p>
           <a href={withParams({ reschedule: undefined })} className="mt-1 inline-block text-xs text-gray-500 underline hover:text-gray-800">
@@ -197,7 +194,7 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
         <section className="mb-8 rounded-xl border border-emerald-300 bg-emerald-50/70 p-4">
           <p className="text-sm text-gray-700">
             Booking <strong>{confirm.svc.name}</strong> with <strong>{confirm.stf.name}</strong> on{" "}
-            <span className="capitalize">{fmtDate(confirm.start)}</span> at{" "}
+            <span className="capitalize">{fmtDayInstant(confirm.start)}</span> at{" "}
             <span className="tabular-nums">{fmtTime(confirm.start)}</span>
           </p>
           <form action={bookSlot} className="mt-3 flex flex-wrap items-end gap-2">
@@ -230,7 +227,7 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
               type="text"
               name="q"
               defaultValue={sp.q ?? ""}
-              placeholder='e.g. "haircut tomorrow afternoon", "cancel my 3pm today", "move my beard trim to friday"'
+              placeholder='e.g. "book a haircut tomorrow afternoon", "cancel my 3pm today", "move my beard trim to friday"'
               className="min-w-0 flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:border-gray-900"
             />
             <button type="submit" className="rounded-md bg-gray-900 px-4 py-2 text-sm text-white">Parse</button>
@@ -252,7 +249,7 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
                   <p className="mb-2 text-gray-600">
                     {intake.matched ? (
                       <>
-                        <strong>{intake.matched.name}</strong> on <span className="capitalize">{fmtDate(intake.resolvedDate)}</span>
+                        <strong>{intake.matched.name}</strong> on <span className="capitalize">{formatDayInZone(intake.resolvedDay, tz)}</span>
                         {intake.parsed.time ? ` (${intake.parsed.time})` : ""}:
                       </>
                     ) : (
@@ -285,7 +282,7 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
               {(intake.parsed.intent === "CANCEL" || intake.parsed.intent === "RESCHEDULE") && (
                 <div className="mt-3">
                   <p className="mb-2 text-gray-600">
-                    Matching appointments on <span className="capitalize">{fmtDate(intake.resolvedDate)}</span> to{" "}
+                    Matching appointments on <span className="capitalize">{formatDayInZone(intake.resolvedDay, tz)}</span> to{" "}
                     {intake.parsed.intent === "CANCEL" ? "cancel" : "reschedule"}:
                   </p>
                   {intake.candidates.length === 0 && <p className="text-gray-400">No matching appointments found.</p>}
@@ -304,7 +301,7 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
                             <button type="submit" className="text-xs text-red-500 hover:text-red-700">cancel</button>
                           </form>
                         ) : (
-                          <a href={rescheduleHref(c.id, c.startAt)} className="text-xs text-amber-600 hover:text-amber-800">reschedule →</a>
+                          <a href={rescheduleHref(c.id)} className="text-xs text-amber-600 hover:text-amber-800">reschedule →</a>
                         )}
                       </li>
                     ))}
@@ -342,7 +339,7 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
                   </span>
                   {!rescheduling && (
                     <span className="flex gap-2">
-                      <a href={rescheduleHref(a.id, a.startAt)} className="text-xs text-amber-600 hover:text-amber-800">move</a>
+                      <a href={rescheduleHref(a.id)} className="text-xs text-amber-600 hover:text-amber-800">move</a>
                       <form action={cancelAppointment}>
                         <input type="hidden" name="id" value={a.id} />
                         <button type="submit" className="text-xs text-gray-400 hover:text-red-600">cancel</button>
@@ -392,8 +389,9 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
 
       <footer className="mt-10 border-t border-gray-200 pt-4 text-xs text-gray-400">
         Intake (book / cancel / reschedule), free slots, and day navigation run on a plain rule-based
-        parser + availability engine (<code>lib/parse/</code>, <code>lib/availability.ts</code>) — $0, no
-        LLM. This is the baseline the eval (<code>npm run eval</code>) measures the LLM path against.
+        parser + availability engine (<code>lib/parse/</code>, <code>lib/availability.ts</code>), all in the
+        business timezone — $0, no LLM. This is the baseline the eval (<code>npm run eval</code>) measures
+        the LLM path against.
       </footer>
     </main>
   );
