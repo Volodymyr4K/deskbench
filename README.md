@@ -54,15 +54,17 @@ Honest conclusions over flattering ones — including where the LLM is not worth
 
 Current **rule baseline** (`$0`, ~0 ms, offline), committed in `eval/results/baseline.json`:
 
-| field      | accuracy |
-|------------|---------:|
-| intent     |   89.9%  |
-| service    |  100.0%  |
-| day        |   98.2%  |
-| time       |   91.7%  |
-| full match |   80.7%  |
+| field      | accuracy | 95% CI (Wilson) |
+|------------|---------:|:----------------|
+| intent     |   89.9%  | 82.8–94.3%      |
+| service    |  100.0%  | 96.6–100.0%     |
+| day        |   98.2%  | 93.6–99.5%      |
+| time       |   91.7%  | 85.0–95.6%      |
+| full match |   80.7%  | 72.3–87.0%      |
 
-Per-intent F1: BOOK 88.3 · CANCEL 93.3 · RESCHEDULE 97.1 · QUESTION 92.7 · UNKNOWN 80.0.
+The intervals are wide because n is only 109 — that's the honest precision of these numbers,
+not a rounding flex. Per-intent F1: BOOK 88.3 · CANCEL 93.3 · RESCHEDULE 97.1 · QUESTION 92.7 ·
+UNKNOWN 80.0.
 The confusion matrix shows exactly where it fails: **5 booking requests phrased without an
 explicit verb or time** ("need a beard trim today", "haircut now") fall through to UNKNOWN,
 which is why UNKNOWN's precision is only 66.7%. That's the point of measuring — it names the
@@ -84,15 +86,17 @@ intent classifier (TF unigrams + bigrams, no Python, deterministic) and scores i
 rule baseline on the **same 5-fold held-out splits** (cross-validation — so this leg has a
 proper train/test split). Result — intent accuracy:
 
-| classifier            | intent accuracy (5-fold CV) |
-|-----------------------|----------------------------:|
-| rule baseline         |                      89.9%  |
-| Naive Bayes (TF)      |                      79.8%  |
+| classifier            | intent accuracy (5-fold CV) | 95% CI (Wilson) |
+|-----------------------|----------------------------:|:----------------|
+| rule baseline         |                      89.9%  | 82.8–94.3%      |
+| Naive Bayes (TF)      |                      79.8%  | 71.3–86.3%      |
 
-The hand-written rules win. NB over-predicts BOOK (it lacks the structural cues — like the
-literal word "cancel" — that the rules encode). So on this task **classical ML does not beat
-the `$0` rules**, which is exactly the kind of result deskbench exists to surface: the bar an
-LLM has to clear is the rules, not ML. Full numbers in `eval/results/ml-baseline.json`.
+The hand-written rules lead. NB over-predicts BOOK (it lacks the structural cues — like the
+literal word "cancel" — that the rules encode). **Honest caveat: the two intervals overlap**,
+so at n=109 this says "rules are at least as good as classical ML here," not a statistically
+conclusive win — but it definitely gives no reason to prefer ML. So on this task classical ML
+doesn't beat the `$0` rules, which is exactly the kind of result deskbench exists to surface:
+the bar an LLM has to clear is the rules, not ML. Full numbers in `eval/results/ml-baseline.json`.
 
 **LLM comparison (separate, older run):** on the earlier 35-example set, `Gemma-4-31b:free`
 scored 100% full match vs. that set's 82.9% baseline — but that was a different, smaller

@@ -3,6 +3,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ruleBasedParse } from "../lib/parse/rules";
 import { makeLlmParser } from "../lib/parse/llm";
+import { wilson } from "../lib/wilson";
 import type { Intent, LabeledExample, ParsedRequest } from "../lib/parse/types";
 
 // deskbench evaluation harness.
@@ -94,6 +95,7 @@ async function scoreParser(parser: Parser, data: LabeledExample[], delayMs: numb
     day: correct.day / n,
     time: correct.time / n,
     fullMatch: fullyCorrect / n,
+    correctCounts: { ...correct, full: fullyCorrect },
     seconds: (Date.now() - t0) / 1000,
     perIntent,
     confusion,
@@ -101,12 +103,25 @@ async function scoreParser(parser: Parser, data: LabeledExample[], delayMs: numb
   };
 }
 
+const ci = (k: number, n: number) => {
+  const w = wilson(k, n);
+  return `[${(w.lo * 100).toFixed(1)}–${(w.hi * 100).toFixed(1)}]`;
+};
+
 function printParser(r: Awaited<ReturnType<typeof scoreParser>>) {
   console.log(`### ${r.name}  (${r.seconds.toFixed(1)}s, n=${r.n})`);
-  console.log(
-    `  fields: intent ${pct(r.intent)} · service ${pct(r.service)} · day ${pct(r.day)} · time ${pct(r.time)}`,
-  );
-  console.log(`  full match ${pct(r.fullMatch)}  (all four fields)\n`);
+  console.log("  field        acc      95% CI (Wilson)");
+  const rows: [string, number, number][] = [
+    ["intent", r.intent, r.correctCounts.intent],
+    ["service", r.service, r.correctCounts.service],
+    ["day", r.day, r.correctCounts.day],
+    ["time", r.time, r.correctCounts.time],
+    ["full match", r.fullMatch, r.correctCounts.full],
+  ];
+  for (const [label, acc, k] of rows) {
+    console.log(`    ${label.padEnd(11)} ${pct(acc).padStart(6)}   ${ci(k, r.n)}`);
+  }
+  console.log("");
 
   console.log("  per-intent       prec   recall    f1   support");
   for (const i of INTENTS) {
@@ -153,6 +168,13 @@ async function main() {
       day: r.day,
       time: r.time,
       fullMatch: r.fullMatch,
+      ci95: {
+        intent: wilson(r.correctCounts.intent, r.n),
+        service: wilson(r.correctCounts.service, r.n),
+        day: wilson(r.correctCounts.day, r.n),
+        time: wilson(r.correctCounts.time, r.n),
+        fullMatch: wilson(r.correctCounts.full, r.n),
+      },
       seconds: Number(r.seconds.toFixed(1)),
       perIntent: r.perIntent,
       confusion: r.confusion,

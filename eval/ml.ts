@@ -3,6 +3,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { tokenize, trainNB, predictNB } from "../lib/ml/naiveBayes";
 import { ruleBasedParse } from "../lib/parse/rules";
+import { wilson } from "../lib/wilson";
 import type { Intent, LabeledExample } from "../lib/parse/types";
 
 // Classical-ML baseline evaluation for INTENT classification.
@@ -57,7 +58,7 @@ function metrics(conf: Conf) {
     const f1 = precision + recall ? (2 * precision * recall) / (precision + recall) : 0;
     perIntent[i] = { precision, recall, f1, support };
   }
-  return { accuracy: total ? correct / total : 0, perIntent };
+  return { accuracy: total ? correct / total : 0, correct, total, perIntent };
 }
 
 function main() {
@@ -87,9 +88,14 @@ function main() {
   const rule = metrics(ruleConf);
   const p = (x: number) => `${(x * 100).toFixed(1)}%`;
 
+  const ci = (k: number, n: number) => {
+    const w = wilson(k, n);
+    return `[${(w.lo * 100).toFixed(1)}–${(w.hi * 100).toFixed(1)}]`;
+  };
+
   console.log(`\nIntent classification — ${K}-fold CV on ${ex.length} examples (held-out)\n`);
-  console.log("                  rule-baseline   naive-bayes");
-  console.log(`  accuracy           ${p(rule.accuracy).padStart(7)}     ${p(nb.accuracy).padStart(7)}`);
+  console.log(`  rule-baseline  accuracy ${p(rule.accuracy)}  95% CI ${ci(rule.correct, rule.total)}`);
+  console.log(`  naive-bayes    accuracy ${p(nb.accuracy)}  95% CI ${ci(nb.correct, nb.total)}`);
   console.log("\n  per-intent F1     rule      nb     support");
   for (const i of INTENTS) {
     console.log(
@@ -108,7 +114,13 @@ function main() {
   writeFileSync(
     join(outDir, "ml-baseline.json"),
     JSON.stringify(
-      { generatedAt: new Date().toISOString(), k: K, n: ex.length, ruleBaseline: rule, naiveBayes: nb },
+      {
+        generatedAt: new Date().toISOString(),
+        k: K,
+        n: ex.length,
+        ruleBaseline: { ...rule, accuracyCi95: wilson(rule.correct, rule.total) },
+        naiveBayes: { ...nb, accuracyCi95: wilson(nb.correct, nb.total) },
+      },
       null,
       2,
     ) + "\n",
