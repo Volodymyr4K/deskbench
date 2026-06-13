@@ -110,15 +110,16 @@ rule-based parser, no LLM.
   (`lib/parse/llm.ts`) behind the same `ParsedRequest` contract; the **evaluation harness**
   (`eval/`) scoring baseline vs. LLM on a curated benchmark (numbers above); a
   request→booking loop (`lib/parse/resolve.ts` + the board's quick-intake box) that books
-  from free-text on the rule parser alone; and a unit-test suite (`npm test`, 20 tests over
-  availability, parser, resolver). Verified end-to-end.
+  from free-text on the rule parser alone; day navigation (any date, not just today) and a
+  booking confirm step that captures client name/phone (or books a walk-in); and a unit-test
+  suite (`npm test`, 25 tests over availability, parser, resolver, date helpers).
 - **Next:** grow the benchmark and have someone other than the author label it; add more
   models (incl. a small one once rate limits allow) for the model-class comparison; wire the
   parser into an actual booking conversation and measure hallucinated-slot rate and real
   cost per conversation end-to-end.
 - **Known simplifications:** times are computed in the server's local timezone (per-business
-  timezone + DST is a real TODO); booking is walk-in (no client capture yet); single demo
-  business; the benchmark is curated by hand, not drawn from real traffic.
+  timezone + DST is a real TODO); cancel/reschedule requests are parsed but not yet actioned;
+  single demo business; the benchmark is curated by hand, not drawn from real traffic.
 
 This README tracks the real state, not an aspirational one.
 

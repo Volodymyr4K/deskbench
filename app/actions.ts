@@ -2,13 +2,21 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { toDateParam } from "@/lib/date";
 
-/** Book a free slot (walk-in: no client attached). Manual source. */
+/**
+ * Book a slot. Client name/phone are optional: if given, we find-or-create the
+ * client (matched by phone within the business) and attach them; otherwise it's
+ * a walk-in. Redirects to the board for the slot's day.
+ */
 export async function bookSlot(formData: FormData): Promise<void> {
   const businessId = String(formData.get("businessId"));
   const serviceId = String(formData.get("serviceId"));
   const staffId = String(formData.get("staffId"));
   const startISO = String(formData.get("startISO"));
+  const clientName = String(formData.get("clientName") ?? "").trim();
+  const clientPhone = String(formData.get("clientPhone") ?? "").trim();
 
   const service = await prisma.service.findUniqueOrThrow({ where: { id: serviceId } });
   const start = new Date(startISO);
@@ -23,15 +31,26 @@ export async function bookSlot(formData: FormData): Promise<void> {
       endAt: { gt: start },
     },
   });
-  if (clash) {
-    revalidatePath("/");
-    return;
+  if (!clash) {
+    let clientId: string | undefined;
+    if (clientName || clientPhone) {
+      const existing = clientPhone
+        ? await prisma.client.findFirst({ where: { businessId, phone: clientPhone } })
+        : null;
+      const client =
+        existing ??
+        (await prisma.client.create({
+          data: { businessId, name: clientName || "Walk-in", phone: clientPhone || null },
+        }));
+      clientId = client.id;
+    }
+
+    await prisma.appointment.create({
+      data: { businessId, serviceId, staffId, clientId, startAt: start, endAt: end, status: "BOOKED", source: "MANUAL" },
+    });
   }
 
-  await prisma.appointment.create({
-    data: { businessId, serviceId, staffId, startAt: start, endAt: end, status: "BOOKED", source: "MANUAL" },
-  });
-  revalidatePath("/");
+  redirect(`/?date=${toDateParam(start)}`);
 }
 
 /** Mark an appointment cancelled (kept in history, not deleted). */
