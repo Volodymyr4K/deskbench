@@ -44,6 +44,35 @@ test("operator cancels an appointment", async ({ page }) => {
   await expect(page.getByText(client)).toHaveCount(0);
 });
 
+test("operator reschedules an appointment to a new slot", async ({ page }) => {
+  const client = `E2E Move ${Date.now()}`;
+  await gotoDayWithSlots(page);
+
+  // Book it first.
+  await page.locator('a[href*="cStaff="]').first().click();
+  await page.locator('input[name="clientName"]').fill(client);
+  await page.getByRole("button", { name: "Confirm booking" }).click();
+
+  const row = page.locator("li", { hasText: client });
+  await expect(row).toBeVisible();
+  const before = (await row.locator("span.tabular-nums").first().textContent())?.trim();
+
+  // Enter reschedule mode and pick the first "move here" slot (the appointment's
+  // own slot stays busy, so the first free target is a different time).
+  await row.getByRole("link", { name: "move" }).click();
+  await expect(page.getByText("Rescheduling")).toBeVisible();
+  await page.getByRole("button", { name: /^\d{2}:\d{2}$/ }).first().click();
+
+  // The "move here" submit is a server action (fetch + soft refresh), so wait
+  // for the board to leave reschedule mode before reading the new time.
+  await expect(page.getByText("Rescheduling")).toHaveCount(0);
+
+  const movedRow = page.locator("li", { hasText: client });
+  await expect(movedRow).toBeVisible();
+  const after = (await movedRow.locator("span.tabular-nums").first().textContent())?.trim();
+  expect(after).not.toBe(before);
+});
+
 test("intake parses a free-text booking request", async ({ page }) => {
   await page.goto("/?q=" + encodeURIComponent("book a haircut tomorrow afternoon"));
 
