@@ -40,3 +40,9 @@ eval/results/*.raw.json
 # TypeScript build info
 *.tsbuildinfo
 .gstack/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
