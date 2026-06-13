@@ -96,8 +96,9 @@ npm run dev                   # operator board at http://localhost:3000
 npm test                      # unit tests (availability, parser, resolver)
 ```
 
-On the board, the **quick intake** box turns a free-text request
-("combo friday at 2pm") into a parsed intent and concrete bookable slots — all on the
+On the board, the **quick intake** box turns a free-text request into a parsed intent and
+an action — bookable slots for "combo friday at 2pm", matching appointments to drop for
+"cancel my 3pm today", or a reschedule flow for "move my beard trim to friday" — all on the
 rule-based parser, no LLM.
 
 ## Status
@@ -109,17 +110,18 @@ rule-based parser, no LLM.
   book/cancel; rule-based request parser (`lib/parse/rules.ts`); LLM parser path
   (`lib/parse/llm.ts`) behind the same `ParsedRequest` contract; the **evaluation harness**
   (`eval/`) scoring baseline vs. LLM on a curated benchmark (numbers above); a
-  request→booking loop (`lib/parse/resolve.ts` + the board's quick-intake box) that books
-  from free-text on the rule parser alone; day navigation (any date, not just today) and a
-  booking confirm step that captures client name/phone (or books a walk-in); and a unit-test
-  suite (`npm test`, 25 tests over availability, parser, resolver, date helpers).
+  full intake loop on the rule parser (`lib/parse/`) — book, cancel, and reschedule from
+  free text; day navigation (any date) with a booking confirm step that captures client
+  name/phone (or walk-in); an operator reschedule mode (move an appointment to a new
+  slot/staff); and a unit-test suite (`npm test`, 28 tests over availability, parser,
+  resolver, date helpers).
 - **Next:** grow the benchmark and have someone other than the author label it; add more
   models (incl. a small one once rate limits allow) for the model-class comparison; wire the
   parser into an actual booking conversation and measure hallucinated-slot rate and real
   cost per conversation end-to-end.
 - **Known simplifications:** times are computed in the server's local timezone (per-business
-  timezone + DST is a real TODO); cancel/reschedule requests are parsed but not yet actioned;
-  single demo business; the benchmark is curated by hand, not drawn from real traffic.
+  timezone + DST is a real TODO); single demo business; the benchmark is curated by hand,
+  not drawn from real traffic.
 
 This README tracks the real state, not an aspirational one.
 

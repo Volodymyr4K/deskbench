@@ -59,3 +59,33 @@ export async function cancelAppointment(formData: FormData): Promise<void> {
   await prisma.appointment.update({ where: { id }, data: { status: "CANCELLED" } });
   revalidatePath("/");
 }
+
+/** Move an existing appointment to a new staff member and/or start time. */
+export async function rescheduleAppointment(formData: FormData): Promise<void> {
+  const id = String(formData.get("id"));
+  const newStaffId = String(formData.get("newStaffId"));
+  const newStartISO = String(formData.get("newStartISO"));
+
+  const appt = await prisma.appointment.findUniqueOrThrow({ where: { id }, include: { service: true } });
+  const start = new Date(newStartISO);
+  const end = new Date(start.getTime() + appt.service.durationMin * 60_000);
+
+  // Refuse if the target overlaps another appointment for that staff (not this one).
+  const clash = await prisma.appointment.findFirst({
+    where: {
+      id: { not: id },
+      staffId: newStaffId,
+      status: { in: ["BOOKED", "COMPLETED"] },
+      startAt: { lt: end },
+      endAt: { gt: start },
+    },
+  });
+  if (!clash) {
+    await prisma.appointment.update({
+      where: { id },
+      data: { staffId: newStaffId, startAt: start, endAt: end },
+    });
+  }
+
+  redirect(`/?date=${toDateParam(start)}`);
+}

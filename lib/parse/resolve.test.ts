@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveDay, slotMatchesTime, filterSlotsByTime } from "./resolve";
+import { resolveDay, slotMatchesTime, filterSlotsByTime, appointmentMatchesRequest } from "./resolve";
 
 // Reference: 2026-06-15 is a Monday.
 const MON = new Date(2026, 5, 15, 10, 0);
@@ -50,5 +50,24 @@ describe("filterSlotsByTime", () => {
     const slots = [new Date(2026, 5, 15, 9), new Date(2026, 5, 15, 13), new Date(2026, 5, 15, 18)];
     expect(filterSlotsByTime(slots, "afternoon")).toHaveLength(1);
     expect(filterSlotsByTime(slots, null)).toHaveLength(3);
+  });
+});
+
+describe("appointmentMatchesRequest", () => {
+  const appt = { startAt: new Date(2026, 5, 15, 15, 0), serviceId: "svc-haircut" };
+
+  it("matches on time token alone when no service is named", () => {
+    expect(appointmentMatchesRequest(appt, { time: "15:00" })).toBe(true);
+    expect(appointmentMatchesRequest(appt, { time: "afternoon" })).toBe(true);
+    expect(appointmentMatchesRequest(appt, { time: "morning" })).toBe(false);
+  });
+
+  it("requires the service to match when one is named", () => {
+    expect(appointmentMatchesRequest(appt, { time: null, serviceId: "svc-haircut" })).toBe(true);
+    expect(appointmentMatchesRequest(appt, { time: null, serviceId: "svc-beard" })).toBe(false);
+  });
+
+  it("matches everything on that day when neither is specified", () => {
+    expect(appointmentMatchesRequest(appt, { time: null })).toBe(true);
   });
 });

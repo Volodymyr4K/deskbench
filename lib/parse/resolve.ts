@@ -61,3 +61,16 @@ export function slotMatchesTime(slot: Date, token: TimeToken): boolean {
 export function filterSlotsByTime(slots: Date[], token: TimeToken): Date[] {
   return slots.filter((s) => slotMatchesTime(s, token));
 }
+
+/**
+ * Whether an existing appointment matches a parsed cancel/reschedule request:
+ * same service (if one was named) and a start time consistent with the request.
+ * Used to surface candidate appointments for the operator to act on.
+ */
+export function appointmentMatchesRequest(
+  appt: { startAt: Date; serviceId: string },
+  opts: { time: TimeToken; serviceId?: string },
+): boolean {
+  if (opts.serviceId && appt.serviceId !== opts.serviceId) return false;
+  return slotMatchesTime(appt.startAt, opts.time);
+}
