@@ -51,11 +51,31 @@ Honest conclusions over flattering ones — including where the LLM is not worth
 - **LLM:** OpenAI-compatible endpoint (OpenRouter by default; any compatible endpoint works)
 - **Eval:** reproducible benchmark harness with baseline (rules / classical ML) vs. LLM
 
+## Running locally
+
+```bash
+npm install
+cp .env.example .env          # set DATABASE_URL (local Postgres)
+npm run db:migrate            # create the schema
+npm run db:seed               # demo barbershop, staff, services, appointments
+npm run dev                   # operator board at http://localhost:3000
+```
+
 ## Status
 
-**Early development.** This commit establishes the project foundation — license, working
-rules, and positioning. The booking flow, operator view, and the evaluation harness are
-the next work, and this README will track the real state, not an aspirational one.
+**Early development — honest snapshot:**
+
+- **Done:** data model (Prisma/Postgres), rule-based slot-availability engine
+  (`lib/availability.ts`), and an operator board (`app/page.tsx`) that shows a day's
+  appointments per staff and lets you book/cancel free slots. Verified end-to-end on the
+  seeded demo data.
+- **Next:** the evaluation harness — measuring an LLM/ML assistant against the rule-based
+  baseline on real dialogue data (accuracy, hallucinated-slot rate, cost per conversation).
+- **Known simplifications:** times are computed in the server's local timezone (per-business
+  timezone + DST is a real TODO); booking is walk-in (no client capture yet); single demo
+  business.
+
+This README tracks the real state, not an aspirational one.
 
 ## License
 

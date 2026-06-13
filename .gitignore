@@ -33,3 +33,6 @@ coverage/
 
 # Eval artifacts (large / regenerable)
 eval/results/*.raw.json
+
+# Prisma generated client
+/app/generated/

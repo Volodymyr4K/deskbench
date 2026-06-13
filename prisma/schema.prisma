@@ -1,0 +1,127 @@
+// deskbench data model.
+// Multi-business by design (one deployment can serve several service businesses),
+// but kept deliberately small — this is an operator tool, not a CRM monster.
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// A service business: a salon, clinic, repair shop, barbershop, etc.
+model Business {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  timezone  String   @default("Europe/Kyiv")
+  createdAt DateTime @default(now())
+
+  services     Service[]
+  staff        Staff[]
+  clients      Client[]
+  appointments Appointment[]
+}
+
+/// Something a client can book (e.g. "Haircut", "Consultation"). Has a duration and price.
+model Service {
+  id          String   @id @default(cuid())
+  businessId  String
+  name        String
+  durationMin Int
+  priceCents  Int      @default(0)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@index([businessId])
+}
+
+/// A staff member who performs services and has working hours.
+model Staff {
+  id         String   @id @default(cuid())
+  businessId String
+  name       String
+  role       String?
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  business     Business       @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  hours        StaffHours[]
+  appointments Appointment[]
+
+  @@index([businessId])
+}
+
+/// Recurring weekly availability for a staff member. dayOfWeek: 0 = Sunday .. 6 = Saturday.
+/// Times are minutes from midnight in the business timezone (e.g. 9:00 = 540).
+model StaffHours {
+  id           String @id @default(cuid())
+  staffId      String
+  dayOfWeek    Int
+  startMinutes Int
+  endMinutes   Int
+
+  staff Staff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  @@unique([staffId, dayOfWeek, startMinutes])
+  @@index([staffId])
+}
+
+/// A customer of the business.
+model Client {
+  id         String   @id @default(cuid())
+  businessId String
+  name       String
+  phone      String?
+  email      String?
+  createdAt  DateTime @default(now())
+
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@index([businessId])
+  @@index([businessId, phone])
+}
+
+enum AppointmentStatus {
+  BOOKED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+/// How the appointment was created. Tracking this is what makes the eval honest later:
+/// we can compare assistant-created vs manually-created bookings.
+enum AppointmentSource {
+  MANUAL
+  ASSISTANT
+}
+
+/// A booked slot of time for a service, with a staff member and (optionally) a client.
+model Appointment {
+  id         String            @id @default(cuid())
+  businessId String
+  serviceId  String
+  staffId    String
+  clientId   String?
+  startAt    DateTime
+  endAt      DateTime
+  status     AppointmentStatus @default(BOOKED)
+  source     AppointmentSource @default(MANUAL)
+  note       String?
+  createdAt  DateTime          @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  service  Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  staff    Staff    @relation(fields: [staffId], references: [id], onDelete: Restrict)
+  client   Client?  @relation(fields: [clientId], references: [id], onDelete: SetNull)
+
+  @@index([businessId, startAt])
+  @@index([staffId, startAt])
+}
