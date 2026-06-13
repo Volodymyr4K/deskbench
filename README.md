@@ -121,7 +121,10 @@ rule-based parser, no LLM.
   cost per conversation end-to-end.
 - **Known simplifications:** times are computed in the server's local timezone (per-business
   timezone + DST is a real TODO); single demo business; the benchmark is curated by hand,
-  not drawn from real traffic.
+  not drawn from real traffic; **no auth yet** — the server actions trust the IDs in the
+  form and do no tenant/ownership checks, fine for a single-operator demo but a real
+  deployment needs authentication and tenant scoping; the overlap check on booking is
+  best-effort, not race-proof (no DB constraint/transaction).
 
 This README tracks the real state, not an aspirational one.
 

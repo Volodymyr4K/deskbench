@@ -18,11 +18,15 @@ export async function bookSlot(formData: FormData): Promise<void> {
   const clientName = String(formData.get("clientName") ?? "").trim();
   const clientPhone = String(formData.get("clientPhone") ?? "").trim();
 
-  const service = await prisma.service.findUniqueOrThrow({ where: { id: serviceId } });
   const start = new Date(startISO);
+  if (Number.isNaN(start.getTime())) redirect("/");
+
+  const service = await prisma.service.findUniqueOrThrow({ where: { id: serviceId } });
   const end = new Date(start.getTime() + service.durationMin * 60_000);
 
-  // Guard against a double-book race: refuse if this staff already overlaps.
+  // Best-effort overlap check — NOT race-proof. Two concurrent bookings of the
+  // same slot can both pass this find-then-create gap; a DB constraint or a
+  // serializable transaction would be needed to fully prevent double-booking.
   const clash = await prisma.appointment.findFirst({
     where: {
       staffId,
@@ -66,8 +70,10 @@ export async function rescheduleAppointment(formData: FormData): Promise<void> {
   const newStaffId = String(formData.get("newStaffId"));
   const newStartISO = String(formData.get("newStartISO"));
 
-  const appt = await prisma.appointment.findUniqueOrThrow({ where: { id }, include: { service: true } });
   const start = new Date(newStartISO);
+  if (Number.isNaN(start.getTime())) redirect("/");
+
+  const appt = await prisma.appointment.findUniqueOrThrow({ where: { id }, include: { service: true } });
   const end = new Date(start.getTime() + appt.service.durationMin * 60_000);
 
   // Refuse if the target overlaps another appointment for that staff (not this one).
