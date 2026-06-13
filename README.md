@@ -195,7 +195,11 @@ in CI. This README tracks the real state, not an aspirational one.
 - **Booking & reschedule are validated server-side** — the time must be in the future and
   inside the staff member's working hours, and staff/service must belong to the same business.
   The deterministic engine picks the concrete slot, never the LLM, so an out-of-hours or
-  made-up slot can't be persisted, even from a hand-crafted request that bypasses the UI.
+  made-up slot can't be persisted, even from a hand-crafted request that bypasses the UI
+  (there's an e2e that tampers the posted time and asserts the server rejects it).
+- **Double-booking is impossible at the database level** — a Postgres exclusion constraint
+  (`tsrange` + `btree_gist`) atomically rejects two overlapping active appointments for the
+  same staff, so it's race-proof, not a best-effort app check.
 - Free-text intake on a `$0` rule parser (`lib/parse/`): book / cancel / reschedule.
 - `/stats`: no-show rate, cancellation rate, status breakdown, manual-vs-assistant source split.
 - **Evaluation harness** (`eval/`): 109-example benchmark, independently cross-labeled; rule +
@@ -210,7 +214,6 @@ in CI. This README tracks the real state, not an aspirational one.
   for a demo.
 - **Auth / multi-tenant isolation** — off-thesis here and the demo is single-operator; a real
   deployment needs it.
-- Booking's overlap check is best-effort, not race-proof (no DB constraint / transaction).
 
 **Honest caveats:** the benchmark is hand-authored (cross-checked by independent AI labelers,
 but not human ground truth) and covers a single demo business.

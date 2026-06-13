@@ -73,6 +73,28 @@ test("operator reschedules an appointment to a new slot", async ({ page }) => {
   expect(after).not.toBe(before);
 });
 
+test("rejects a tampered out-of-hours booking server-side", async ({ page }) => {
+  const client = `E2E Tamper ${Date.now()}`;
+  await gotoDayWithSlots(page);
+  await page.locator('a[href*="cStaff="]').first().click();
+  await expect(page.getByRole("button", { name: "Confirm booking" })).toBeVisible();
+
+  // Tamper the hidden start time to a future but out-of-hours instant
+  // (01:00 UTC ≈ 03:00–04:00 in Europe/Kyiv, before the 09:00 open). The UI would
+  // never offer this; the server action must reject it anyway.
+  const bad = new Date();
+  bad.setUTCDate(bad.getUTCDate() + 2);
+  bad.setUTCHours(1, 0, 0, 0);
+  await page
+    .locator('input[name="startISO"]')
+    .evaluate((el, v) => ((el as HTMLInputElement).value = v), bad.toISOString());
+  await page.locator('input[name="clientName"]').fill(client);
+  await page.getByRole("button", { name: "Confirm booking" }).click();
+
+  // Rejected: the client must not appear anywhere on the board.
+  await expect(page.getByText(client)).toHaveCount(0);
+});
+
 test("intake parses a free-text booking request", async ({ page }) => {
   await page.goto("/?q=" + encodeURIComponent("book a haircut tomorrow afternoon"));
 

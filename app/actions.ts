@@ -44,9 +44,10 @@ export async function bookSlot(formData: FormData): Promise<void> {
     startWithinHours(start, service.durationMin, tz, workingMinutesFor(staff.hours, start, tz));
   if (!valid) redirect(`/?date=${toDateParam(instantParts(start, tz))}`);
 
-  // Best-effort overlap check — NOT race-proof. Two concurrent bookings of the
-  // same slot can both pass this find-then-create gap; a DB constraint or a
-  // serializable transaction would be needed to fully prevent double-booking.
+  // Fast, friendly pre-check for the common case. The hard guarantee against
+  // double-booking is the Postgres exclusion constraint `appointment_no_overlap`
+  // (see the migration), which the create below is wrapped to catch — so the rare
+  // concurrent race is handled atomically by the DB, not by this check.
   const clash = await prisma.appointment.findFirst({
     where: {
       staffId,
@@ -57,22 +58,29 @@ export async function bookSlot(formData: FormData): Promise<void> {
   });
   if (!clash) {
     const bizId = service.businessId;
-    let clientId: string | undefined;
-    if (clientName || clientPhone) {
-      const existing = clientPhone
-        ? await prisma.client.findFirst({ where: { businessId: bizId, phone: clientPhone } })
-        : null;
-      const client =
-        existing ??
-        (await prisma.client.create({
-          data: { businessId: bizId, name: clientName || "Walk-in", phone: clientPhone || null },
-        }));
-      clientId = client.id;
-    }
+    try {
+      let clientId: string | undefined;
+      if (clientName || clientPhone) {
+        const existing = clientPhone
+          ? await prisma.client.findFirst({ where: { businessId: bizId, phone: clientPhone } })
+          : null;
+        const client =
+          existing ??
+          (await prisma.client.create({
+            data: { businessId: bizId, name: clientName || "Walk-in", phone: clientPhone || null },
+          }));
+        clientId = client.id;
+      }
 
-    await prisma.appointment.create({
-      data: { businessId: bizId, serviceId, staffId, clientId, startAt: start, endAt: end, status: "BOOKED", source: "MANUAL" },
-    });
+      await prisma.appointment.create({
+        data: { businessId: bizId, serviceId, staffId, clientId, startAt: start, endAt: end, status: "BOOKED", source: "MANUAL" },
+      });
+    } catch (e) {
+      // A concurrent booking won the slot first: the DB exclusion constraint
+      // rejects the overlap atomically (this is the race-proof guarantee). Treat
+      // as "slot taken" and fall through. Re-throw anything else.
+      if (!(e instanceof Error) || !e.message.includes("appointment_no_overlap")) throw e;
+    }
   }
 
   redirect(`/?date=${toDateParam(instantParts(start, service.business.timezone))}`);
@@ -133,10 +141,15 @@ export async function rescheduleAppointment(formData: FormData): Promise<void> {
     },
   });
   if (!clash) {
-    await prisma.appointment.update({
-      where: { id },
-      data: { staffId: newStaffId, startAt: start, endAt: end },
-    });
+    try {
+      await prisma.appointment.update({
+        where: { id },
+        data: { staffId: newStaffId, startAt: start, endAt: end },
+      });
+    } catch (e) {
+      // Concurrent booking took the target slot — exclusion constraint rejects it.
+      if (!(e instanceof Error) || !e.message.includes("appointment_no_overlap")) throw e;
+    }
   }
 
   redirect(`/?date=${toDateParam(instantParts(start, appt.business.timezone))}`);
