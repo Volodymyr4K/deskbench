@@ -48,37 +48,40 @@ Honest conclusions over flattering ones — including where the LLM is not worth
 
 ### Measured results (not claimed)
 
-On a curated 35-example benchmark of front-desk requests (`eval/dataset.json` —
-hand-written, not real customer logs), scored on four fields plus a strict
-"all four correct" rate:
+`npm run eval` scores a parser on a curated 109-example benchmark
+(`eval/dataset.json` — hand-written, not real customer logs) on four fields, a strict
+"all four correct" rate, and per-intent precision/recall/F1 + an intent confusion matrix.
 
-| parser                     | intent | service |  day  |  time | full match |
-|----------------------------|-------:|--------:|------:|------:|-----------:|
-| rule baseline (`$0`, ~0ms) |  91.4% |   100%  |  100% | 91.4% |   **82.9%** |
-| Gemma-4-31b (free, LLM)    |   100% |   100%  |  100% |  100% |    **100%** |
+Current **rule baseline** (`$0`, ~0 ms, offline), committed in `eval/results/baseline.json`:
 
-Reproduce: `npm run eval` (baseline only, offline, `$0`) or
+| field      | accuracy |
+|------------|---------:|
+| intent     |   89.9%  |
+| service    |  100.0%  |
+| day        |   95.4%  |
+| time       |   91.7%  |
+| full match |   77.1%  |
+
+Per-intent F1: BOOK 88.3 · CANCEL 93.3 · RESCHEDULE 97.1 · QUESTION 92.7 · UNKNOWN 80.0.
+The confusion matrix shows exactly where it fails: **5 booking requests phrased without an
+explicit verb or time** ("need a beard trim today", "haircut now") fall through to UNKNOWN,
+which is why UNKNOWN's precision is only 66.7%. That's the point of measuring — it names the
+gap instead of hiding it.
+
+The baseline is **not** tuned to flatter these numbers. Since the benchmark was authored by
+the same assistant, tuning the parser against its own visible misses would be overfitting
+(there is no held-out split), so the honest baseline + "here's where it breaks" is kept as-is.
+
+**LLM comparison (separate, older run):** on the earlier 35-example set, `Gemma-4-31b:free`
+scored 100% full match vs. that set's 82.9% baseline — but that was a different, smaller
+benchmark, so it is **not** comparable to the table above; a re-run on the 109-example set is
+pending (gated on LLM quota). A small-model run (llama-3.2-3b) was drowned by free-tier
+rate-limit 429s and is deliberately not reported. Reproduce the LLM path with
 `npm run eval -- --model google/gemma-4-31b-it:free` (needs `OPENAI_API_KEY`).
-Baseline result is committed in `eval/results/baseline.json`, the comparison in
-`eval/results/latest.json`.
 
-**What this says — and what it doesn't (read this):**
-
-- On this set the LLM clears the bar: it gets all 6 cases the baseline misses
-  (ambiguous "do you have anything…", an unguessable am/pm, two times in one sentence).
-  The baseline was **not** tuned to flatter its numbers.
-- **35 examples is tiny.** 100% here is not 100% in general — the confidence interval is wide.
-- The benchmark was **authored by the same person who reads the LLM's answers**, so on
-  genuinely ambiguous items the LLM partly scores for agreeing with the author's labels,
-  not against an external ground truth. This inflates the LLM's apparent edge.
-- **Cost is not just dollars.** The baseline answers in ~0ms, offline, with no dependency.
-  The Gemma run took ~302s for 35 calls — most of that is a self-imposed 3s delay to stay
-  under the free tier's rate limit, but real per-call latency is still several seconds. For
-  a live front desk that latency and the external dependency are a real cost the accuracy
-  win has to outweigh.
-- A small-model comparison (llama-3.2-3b) was attempted to test the "model class vs.
-  information" question, but free-tier rate limits (shared quota) drowned it in HTTP 429s,
-  so those numbers are not trustworthy and are deliberately **not** reported here. Deferred.
+**The honest caveats still stand:** the set is author-labeled (a model can score for agreeing
+with the labeler on ambiguous items), and the LLM's cost is not just dollars — it answers in
+seconds with an external dependency, where the baseline answers in ~0 ms offline.
 
 ## Tech stack
 

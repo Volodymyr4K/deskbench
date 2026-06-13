@@ -3,16 +3,18 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ruleBasedParse } from "../lib/parse/rules";
 import { makeLlmParser } from "../lib/parse/llm";
-import type { LabeledExample, ParsedRequest } from "../lib/parse/types";
+import type { Intent, LabeledExample, ParsedRequest } from "../lib/parse/types";
 
 // deskbench evaluation harness.
 //
 //   npm run eval                       -> rule baseline only ($0, offline)
 //   npm run eval -- --model X          -> baseline + LLM X (needs OPENAI_API_KEY)
-//   npm run eval -- --model X --model Y --limit 5
+//   npm run eval -- --model X --limit 5 --delay 3000
 //
-// Scores each parser on four fields plus a strict "all fields correct" rate, on
-// the same curated benchmark. The LLM has to beat the baseline to justify cost.
+// Reports, per parser, on the same curated benchmark:
+//   - field accuracy (intent/service/day/time) + strict all-four "full match"
+//   - per-intent precision / recall / F1 and an intent confusion matrix
+// The LLM has to beat the baseline on these to justify its cost.
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -20,6 +22,7 @@ type Parser = { name: string; parse: (text: string) => ParsedRequest | Promise<P
 
 const FIELDS = ["intent", "service", "day", "time"] as const;
 type Field = (typeof FIELDS)[number];
+const INTENTS: Intent[] = ["BOOK", "CANCEL", "RESCHEDULE", "QUESTION", "UNKNOWN"];
 
 function parseArgs(argv: string[]) {
   const models: string[] = [];
@@ -41,16 +44,24 @@ function loadDataset(limit: number): LabeledExample[] {
 
 const fieldEq = (a: unknown, b: unknown): boolean => (a ?? null) === (b ?? null);
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
+
+type IntentMetric = { precision: number; recall: number; f1: number; support: number };
 
 async function scoreParser(parser: Parser, data: LabeledExample[], delayMs: number) {
   const correct: Record<Field, number> = { intent: 0, service: 0, day: 0, time: 0 };
   let fullyCorrect = 0;
   const misses: { text: string; field: Field; expected: unknown; got: unknown }[] = [];
+  // confusion[expected][predicted]
+  const confusion: Record<Intent, Record<Intent, number>> = Object.fromEntries(
+    INTENTS.map((e) => [e, Object.fromEntries(INTENTS.map((p) => [p, 0])) as Record<Intent, number>]),
+  ) as Record<Intent, Record<Intent, number>>;
   const isLlm = parser.name.startsWith("llm:");
 
   const t0 = Date.now();
   for (const ex of data) {
     const got = await parser.parse(ex.text);
+    confusion[ex.expected.intent][got.intent]++;
     let allOk = true;
     for (const f of FIELDS) {
       if (fieldEq(got[f], ex.expected[f])) correct[f]++;
@@ -64,6 +75,17 @@ async function scoreParser(parser: Parser, data: LabeledExample[], delayMs: numb
   }
 
   const n = data.length;
+  const perIntent: Record<Intent, IntentMetric> = {} as Record<Intent, IntentMetric>;
+  for (const i of INTENTS) {
+    const tp = confusion[i][i];
+    const support = INTENTS.reduce((s, p) => s + confusion[i][p], 0);
+    const predicted = INTENTS.reduce((s, e) => s + confusion[e][i], 0);
+    const precision = predicted ? tp / predicted : 0;
+    const recall = support ? tp / support : 0;
+    const f1 = precision + recall ? (2 * precision * recall) / (precision + recall) : 0;
+    perIntent[i] = { precision, recall, f1, support };
+  }
+
   return {
     name: parser.name,
     n,
@@ -73,8 +95,33 @@ async function scoreParser(parser: Parser, data: LabeledExample[], delayMs: numb
     time: correct.time / n,
     fullMatch: fullyCorrect / n,
     seconds: (Date.now() - t0) / 1000,
+    perIntent,
+    confusion,
     misses,
   };
+}
+
+function printParser(r: Awaited<ReturnType<typeof scoreParser>>) {
+  console.log(`### ${r.name}  (${r.seconds.toFixed(1)}s, n=${r.n})`);
+  console.log(
+    `  fields: intent ${pct(r.intent)} · service ${pct(r.service)} · day ${pct(r.day)} · time ${pct(r.time)}`,
+  );
+  console.log(`  full match ${pct(r.fullMatch)}  (all four fields)\n`);
+
+  console.log("  per-intent       prec   recall    f1   support");
+  for (const i of INTENTS) {
+    const m = r.perIntent[i];
+    console.log(
+      `    ${i.padEnd(12)} ${pct(m.precision).padStart(6)} ${pct(m.recall).padStart(7)} ${pct(m.f1).padStart(7)} ${String(m.support).padStart(6)}`,
+    );
+  }
+
+  console.log("\n  intent confusion (rows = expected, cols = predicted):");
+  console.log("    " + "".padEnd(12) + INTENTS.map((p) => p.slice(0, 4).padStart(6)).join(""));
+  for (const e of INTENTS) {
+    console.log("    " + e.padEnd(12) + INTENTS.map((p) => String(r.confusion[e][p]).padStart(6)).join(""));
+  }
+  console.log("");
 }
 
 async function main() {
@@ -94,10 +141,10 @@ async function main() {
 
   console.log(`\ndeskbench eval — ${data.length} examples, ${parsers.length} parser(s)\n`);
 
-  const pct = (x: number) => `${(x * 100).toFixed(1)}%`;
   const summaries = [];
   for (const parser of parsers) {
     const r = await scoreParser(parser, data, delayMs);
+    printParser(r);
     summaries.push({
       parser: r.name,
       n: r.n,
@@ -107,19 +154,11 @@ async function main() {
       time: r.time,
       fullMatch: r.fullMatch,
       seconds: Number(r.seconds.toFixed(1)),
+      perIntent: r.perIntent,
+      confusion: r.confusion,
     });
-    console.log(
-      `### ${r.name}  (${r.seconds.toFixed(1)}s)\n` +
-        `  intent ${pct(r.intent)} · service ${pct(r.service)} · day ${pct(r.day)} · time ${pct(r.time)}\n` +
-        `  full match ${pct(r.fullMatch)}  (all four fields), misses ${r.misses.length}`,
-    );
-    for (const m of r.misses) {
-      console.log(`    [${m.field}] "${m.text}"  exp=${JSON.stringify(m.expected)} got=${JSON.stringify(m.got)}`);
-    }
-    console.log("");
   }
 
-  // Comparison table
   console.log("parser".padEnd(46) + "intent  service   day    time   FULL");
   for (const s of summaries) {
     console.log(
@@ -131,7 +170,6 @@ async function main() {
   const outDir = join(__dirname, "results");
   mkdirSync(outDir, { recursive: true });
   const out = { generatedAt: new Date().toISOString(), datasetSize: data.length, results: summaries };
-  // Keep baseline.json as the canonical $0 reference; write comparisons separately.
   const file = models.length ? "latest.json" : "baseline.json";
   writeFileSync(join(outDir, file), JSON.stringify(out, null, 2) + "\n");
   console.log(`\nWrote eval/results/${file}`);

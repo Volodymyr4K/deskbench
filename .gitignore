@@ -46,3 +46,6 @@ eval/results/*.raw.json
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Transient eval comparison output (regenerated per LLM run)
+eval/results/latest.json

@@ -1,15 +1,85 @@
 {
-  "generatedAt": "2026-06-13T09:16:53.660Z",
-  "datasetSize": 35,
+  "generatedAt": "2026-06-13T11:02:34.732Z",
+  "datasetSize": 109,
   "results": [
     {
       "parser": "rule-baseline",
-      "n": 35,
-      "intent": 0.9142857142857143,
+      "n": 109,
+      "intent": 0.8990825688073395,
       "service": 1,
-      "day": 1,
-      "time": 0.9142857142857143,
-      "fullMatch": 0.8285714285714286
+      "day": 0.9541284403669725,
+      "time": 0.9174311926605505,
+      "fullMatch": 0.7706422018348624,
+      "seconds": 0,
+      "perIntent": {
+        "BOOK": {
+          "precision": 0.918918918918919,
+          "recall": 0.85,
+          "f1": 0.8831168831168831,
+          "support": 40
+        },
+        "CANCEL": {
+          "precision": 1,
+          "recall": 0.875,
+          "f1": 0.9333333333333333,
+          "support": 16
+        },
+        "RESCHEDULE": {
+          "precision": 1,
+          "recall": 0.9444444444444444,
+          "f1": 0.9714285714285714,
+          "support": 18
+        },
+        "QUESTION": {
+          "precision": 0.95,
+          "recall": 0.9047619047619048,
+          "f1": 0.9268292682926829,
+          "support": 21
+        },
+        "UNKNOWN": {
+          "precision": 0.6666666666666666,
+          "recall": 1,
+          "f1": 0.8,
+          "support": 14
+        }
+      },
+      "confusion": {
+        "BOOK": {
+          "BOOK": 34,
+          "CANCEL": 0,
+          "RESCHEDULE": 0,
+          "QUESTION": 1,
+          "UNKNOWN": 5
+        },
+        "CANCEL": {
+          "BOOK": 1,
+          "CANCEL": 14,
+          "RESCHEDULE": 0,
+          "QUESTION": 0,
+          "UNKNOWN": 1
+        },
+        "RESCHEDULE": {
+          "BOOK": 1,
+          "CANCEL": 0,
+          "RESCHEDULE": 17,
+          "QUESTION": 0,
+          "UNKNOWN": 0
+        },
+        "QUESTION": {
+          "BOOK": 1,
+          "CANCEL": 0,
+          "RESCHEDULE": 0,
+          "QUESTION": 19,
+          "UNKNOWN": 1
+        },
+        "UNKNOWN": {
+          "BOOK": 0,
+          "CANCEL": 0,
+          "RESCHEDULE": 0,
+          "QUESTION": 0,
+          "UNKNOWN": 14
+        }
+      }
     }
   ]
 }
