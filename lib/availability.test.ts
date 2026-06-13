@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { freeSlots } from "./availability";
+import { freeSlots, startWithinHours } from "./availability";
 import { zonedDayMinutesToInstant, instantParts, type CalendarDay } from "./tz";
 
 // Tests run in a fixed zone (UTC) and assert on wall-clock minutes, so they are
@@ -64,5 +64,25 @@ describe("freeSlots", () => {
 
   it("returns nothing for a non-positive duration", () => {
     expect(freeSlots({ day: DAY, tz: TZ, workingMinutes: [{ start: 540, end: 720 }], busy: [], durationMin: 0 })).toEqual([]);
+  });
+});
+
+describe("startWithinHours", () => {
+  const work = [{ start: 9 * 60, end: 18 * 60 }]; // 09:00–18:00
+
+  it("accepts a slot fully inside working hours", () => {
+    expect(startWithinHours(at(10 * 60), 30, TZ, work)).toBe(true);
+  });
+
+  it("rejects a slot that runs past closing", () => {
+    expect(startWithinHours(at(17 * 60 + 50), 30, TZ, work)).toBe(false); // 17:50 + 30 = 18:20
+  });
+
+  it("rejects a slot before opening", () => {
+    expect(startWithinHours(at(8 * 60 + 20), 30, TZ, work)).toBe(false);
+  });
+
+  it("rejects when there are no working hours that day", () => {
+    expect(startWithinHours(at(10 * 60), 30, TZ, [])).toBe(false);
   });
 });

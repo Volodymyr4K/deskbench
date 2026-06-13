@@ -1,4 +1,4 @@
-import { type CalendarDay, zonedDayMinutesToInstant } from "@/lib/tz";
+import { type CalendarDay, zonedDayMinutesToInstant, instantParts } from "@/lib/tz";
 
 // Pure slot-availability logic — the heart of deskbench, and the rule-based
 // baseline any "smart" (ML / LLM) scheduling must be measured against.
@@ -59,4 +59,16 @@ export function freeSlots(opts: FreeSlotsOptions): Date[] {
     }
   }
   return slots;
+}
+
+/**
+ * Server-side guard: is a [start, start+duration] booking fully inside one of the
+ * working intervals for that day (wall-clock in `tz`)? Used so the booking actions
+ * never persist an out-of-hours slot, even from a hand-crafted request that bypasses
+ * the UI (the UI only ever offers slots from `freeSlots`, but the API must not trust that).
+ */
+export function startWithinHours(start: Date, durationMin: number, tz: string, workingMinutes: Interval[]): boolean {
+  const startMin = instantParts(start, tz).minutes;
+  const endMin = startMin + durationMin;
+  return workingMinutes.some((w) => w.start <= startMin && endMin <= w.end);
 }

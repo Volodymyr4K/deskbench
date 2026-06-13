@@ -5,6 +5,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { toDateParam } from "@/lib/date";
 import { instantParts } from "@/lib/tz";
+import { startWithinHours, type Interval } from "@/lib/availability";
+
+/** Working intervals (minutes-from-midnight) for a staff member on the weekday of `start`, in `tz`. */
+function workingMinutesFor(hours: { dayOfWeek: number; startMinutes: number; endMinutes: number }[], start: Date, tz: string): Interval[] {
+  const weekday = instantParts(start, tz).weekday;
+  return hours.filter((h) => h.dayOfWeek === weekday).map((h) => ({ start: h.startMinutes, end: h.endMinutes }));
+}
 
 /**
  * Book a slot. Client name/phone are optional: if given, we find-or-create the
@@ -12,7 +19,6 @@ import { instantParts } from "@/lib/tz";
  * a walk-in. Redirects to the board for the slot's day (in the business tz).
  */
 export async function bookSlot(formData: FormData): Promise<void> {
-  const businessId = String(formData.get("businessId"));
   const serviceId = String(formData.get("serviceId"));
   const staffId = String(formData.get("staffId"));
   const startISO = String(formData.get("startISO"));
@@ -23,7 +29,20 @@ export async function bookSlot(formData: FormData): Promise<void> {
   if (Number.isNaN(start.getTime())) redirect("/");
 
   const service = await prisma.service.findUniqueOrThrow({ where: { id: serviceId }, include: { business: true } });
+  const staff = await prisma.staff.findUnique({ where: { id: staffId }, include: { hours: true } });
+  const tz = service.business.timezone;
   const end = new Date(start.getTime() + service.durationMin * 60_000);
+
+  // Validate server-side — never trust the posted time. Reject if staff/service
+  // are from different businesses, the slot is in the past, or it falls outside
+  // the staff member's working hours. (The UI only offers valid slots, but the
+  // action must not rely on that.)
+  const valid =
+    !!staff &&
+    staff.businessId === service.businessId &&
+    start.getTime() >= Date.now() &&
+    startWithinHours(start, service.durationMin, tz, workingMinutesFor(staff.hours, start, tz));
+  if (!valid) redirect(`/?date=${toDateParam(instantParts(start, tz))}`);
 
   // Best-effort overlap check — NOT race-proof. Two concurrent bookings of the
   // same slot can both pass this find-then-create gap; a DB constraint or a
@@ -37,21 +56,22 @@ export async function bookSlot(formData: FormData): Promise<void> {
     },
   });
   if (!clash) {
+    const bizId = service.businessId;
     let clientId: string | undefined;
     if (clientName || clientPhone) {
       const existing = clientPhone
-        ? await prisma.client.findFirst({ where: { businessId, phone: clientPhone } })
+        ? await prisma.client.findFirst({ where: { businessId: bizId, phone: clientPhone } })
         : null;
       const client =
         existing ??
         (await prisma.client.create({
-          data: { businessId, name: clientName || "Walk-in", phone: clientPhone || null },
+          data: { businessId: bizId, name: clientName || "Walk-in", phone: clientPhone || null },
         }));
       clientId = client.id;
     }
 
     await prisma.appointment.create({
-      data: { businessId, serviceId, staffId, clientId, startAt: start, endAt: end, status: "BOOKED", source: "MANUAL" },
+      data: { businessId: bizId, serviceId, staffId, clientId, startAt: start, endAt: end, status: "BOOKED", source: "MANUAL" },
     });
   }
 
@@ -89,7 +109,18 @@ export async function rescheduleAppointment(formData: FormData): Promise<void> {
   if (Number.isNaN(start.getTime())) redirect("/");
 
   const appt = await prisma.appointment.findUniqueOrThrow({ where: { id }, include: { service: true, business: true } });
+  const newStaff = await prisma.staff.findUnique({ where: { id: newStaffId }, include: { hours: true } });
+  const tz = appt.business.timezone;
   const end = new Date(start.getTime() + appt.service.durationMin * 60_000);
+
+  // Same server-side guard as booking: target staff must be in this business, the
+  // new time must be in the future and inside that staff's working hours.
+  const valid =
+    !!newStaff &&
+    newStaff.businessId === appt.businessId &&
+    start.getTime() >= Date.now() &&
+    startWithinHours(start, appt.service.durationMin, tz, workingMinutesFor(newStaff.hours, start, tz));
+  if (!valid) redirect(`/?date=${toDateParam(instantParts(start, tz))}`);
 
   // Refuse if the target overlaps another appointment for that staff (not this one).
   const clash = await prisma.appointment.findFirst({

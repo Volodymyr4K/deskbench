@@ -86,8 +86,8 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
   };
   const confirmHref = (staffId: string, serviceId: string, startISO: string) =>
     `/?${new URLSearchParams({ cStaff: staffId, cService: serviceId, cStart: startISO }).toString()}`;
-  const rescheduleHref = (apptId: string) =>
-    `/?${new URLSearchParams({ reschedule: apptId }).toString()}`;
+  const rescheduleHref = (apptId: string, onDate: typeof day) =>
+    `/?${new URLSearchParams({ reschedule: apptId, date: toDateParam(onDate) }).toString()}`;
 
   // Confirm step (only when not rescheduling).
   const confirm =
@@ -307,7 +307,7 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
                             <button type="submit" className="text-xs text-red-500 hover:text-red-700">cancel</button>
                           </form>
                         ) : (
-                          <a href={rescheduleHref(c.id)} className="text-xs text-amber-600 hover:text-amber-800">reschedule →</a>
+                          <a href={rescheduleHref(c.id, intake.resolvedDay)} className="text-xs text-amber-600 hover:text-amber-800">reschedule →</a>
                         )}
                       </li>
                     ))}
@@ -361,7 +361,7 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
                     ) : (
                       // Upcoming appointment: move or cancel.
                       <span className="flex gap-2">
-                        <a href={rescheduleHref(a.id)} className="text-xs text-amber-600 hover:text-amber-800">move</a>
+                        <a href={rescheduleHref(a.id, day)} className="text-xs text-amber-600 hover:text-amber-800">move</a>
                         <form action={cancelAppointment}>
                           <input type="hidden" name="id" value={a.id} />
                           <button type="submit" className="text-xs text-gray-400 hover:text-red-600">cancel</button>

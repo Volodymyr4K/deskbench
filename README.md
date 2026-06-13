@@ -192,6 +192,10 @@ in CI. This README tracks the real state, not an aspirational one.
   reasoning runs in `Business.timezone`; stored times are UTC instants (Luxon).
 - Operator board: per-staff day view, day navigation, book / cancel / reschedule, client
   capture, mark completed / no-show.
+- **Booking & reschedule are validated server-side** — the time must be in the future and
+  inside the staff member's working hours, and staff/service must belong to the same business.
+  The deterministic engine picks the concrete slot, never the LLM, so an out-of-hours or
+  made-up slot can't be persisted, even from a hand-crafted request that bypasses the UI.
 - Free-text intake on a `$0` rule parser (`lib/parse/`): book / cancel / reschedule.
 - `/stats`: no-show rate, cancellation rate, status breakdown, manual-vs-assistant source split.
 - **Evaluation harness** (`eval/`): 109-example benchmark, independently cross-labeled; rule +
