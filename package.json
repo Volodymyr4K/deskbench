@@ -12,6 +12,7 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "eval": "tsx --env-file=.env eval/run.ts",
+    "eval:ml": "tsx eval/ml.ts",
     "test": "vitest run",
     "e2e": "tsx e2e/setup-db.ts && playwright test"
   },

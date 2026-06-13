@@ -79,6 +79,21 @@ agreement with the author. The disagreements caught 5 inconsistent author day-la
 were reconciled to the independent majority. This reduces single-author bias — though all
 labelers are AI, not humans, so it is still not human ground truth.
 
+**Classical ML baseline (rules vs ML).** `npm run eval:ml` trains a Multinomial Naive Bayes
+intent classifier (TF unigrams + bigrams, no Python, deterministic) and scores it against the
+rule baseline on the **same 5-fold held-out splits** (cross-validation — so this leg has a
+proper train/test split). Result — intent accuracy:
+
+| classifier            | intent accuracy (5-fold CV) |
+|-----------------------|----------------------------:|
+| rule baseline         |                      89.9%  |
+| Naive Bayes (TF)      |                      79.8%  |
+
+The hand-written rules win. NB over-predicts BOOK (it lacks the structural cues — like the
+literal word "cancel" — that the rules encode). So on this task **classical ML does not beat
+the `$0` rules**, which is exactly the kind of result deskbench exists to surface: the bar an
+LLM has to clear is the rules, not ML. Full numbers in `eval/results/ml-baseline.json`.
+
 **LLM comparison (separate, older run):** on the earlier 35-example set, `Gemma-4-31b:free`
 scored 100% full match vs. that set's 82.9% baseline — but that was a different, smaller
 benchmark, so it is **not** comparable to the table above; a re-run on the 109-example set is

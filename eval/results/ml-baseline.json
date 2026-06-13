@@ -1,0 +1,75 @@
+{
+  "generatedAt": "2026-06-13T11:23:43.538Z",
+  "k": 5,
+  "n": 109,
+  "ruleBaseline": {
+    "accuracy": 0.8990825688073395,
+    "perIntent": {
+      "BOOK": {
+        "precision": 0.918918918918919,
+        "recall": 0.85,
+        "f1": 0.8831168831168831,
+        "support": 40
+      },
+      "CANCEL": {
+        "precision": 1,
+        "recall": 0.875,
+        "f1": 0.9333333333333333,
+        "support": 16
+      },
+      "RESCHEDULE": {
+        "precision": 1,
+        "recall": 0.9444444444444444,
+        "f1": 0.9714285714285714,
+        "support": 18
+      },
+      "QUESTION": {
+        "precision": 0.95,
+        "recall": 0.9047619047619048,
+        "f1": 0.9268292682926829,
+        "support": 21
+      },
+      "UNKNOWN": {
+        "precision": 0.6666666666666666,
+        "recall": 1,
+        "f1": 0.8,
+        "support": 14
+      }
+    }
+  },
+  "naiveBayes": {
+    "accuracy": 0.7981651376146789,
+    "perIntent": {
+      "BOOK": {
+        "precision": 0.6896551724137931,
+        "recall": 1,
+        "f1": 0.8163265306122449,
+        "support": 40
+      },
+      "CANCEL": {
+        "precision": 1,
+        "recall": 0.625,
+        "f1": 0.7692307692307693,
+        "support": 16
+      },
+      "RESCHEDULE": {
+        "precision": 0.85,
+        "recall": 0.9444444444444444,
+        "f1": 0.8947368421052632,
+        "support": 18
+      },
+      "QUESTION": {
+        "precision": 0.9285714285714286,
+        "recall": 0.6190476190476191,
+        "f1": 0.742857142857143,
+        "support": 21
+      },
+      "UNKNOWN": {
+        "precision": 1,
+        "recall": 0.5,
+        "f1": 0.6666666666666666,
+        "support": 14
+      }
+    }
+  }
+}
