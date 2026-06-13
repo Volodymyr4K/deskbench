@@ -1,0 +1,438 @@
+[
+  {
+    "i": 0,
+    "text": "Can I get a haircut tomorrow at 2pm?"
+  },
+  {
+    "i": 1,
+    "text": "I'd like to book a beard trim this friday afternoon"
+  },
+  {
+    "i": 2,
+    "text": "book me in for the combo on saturday morning"
+  },
+  {
+    "i": 3,
+    "text": "haircut at 10am please"
+  },
+  {
+    "i": 4,
+    "text": "I want to come in tomorrow for a cut"
+  },
+  {
+    "i": 5,
+    "text": "any openings monday for haircut and beard?"
+  },
+  {
+    "i": 6,
+    "text": "Can I schedule a haircut for 3:30 on wednesday"
+  },
+  {
+    "i": 7,
+    "text": "appointment for combo tonight"
+  },
+  {
+    "i": 8,
+    "text": "get me a slot for a haircut"
+  },
+  {
+    "i": 9,
+    "text": "I'll take the 2pm slot"
+  },
+  {
+    "i": 10,
+    "text": "book haircut friday 9"
+  },
+  {
+    "i": 11,
+    "text": "Could I come by at noon today for a haircut?"
+  },
+  {
+    "i": 12,
+    "text": "schedule me for a beard trim next tuesday"
+  },
+  {
+    "i": 13,
+    "text": "I'd like an appointment thursday at 4:15"
+  },
+  {
+    "i": 14,
+    "text": "can i book the works, cut and beard, for saturday at 1pm"
+  },
+  {
+    "i": 15,
+    "text": "sign me up for a haircut tomorrow morning"
+  },
+  {
+    "i": 16,
+    "text": "do you have a slot for a beard trim this evening"
+  },
+  {
+    "i": 17,
+    "text": "I need an appointment for a haircut, monday if you can"
+  },
+  {
+    "i": 18,
+    "text": "book combo wednesday 11:30"
+  },
+  {
+    "i": 19,
+    "text": "haircut please, today around 5"
+  },
+  {
+    "i": 20,
+    "text": "can i come in for a cut at 9:45 tomorrow"
+  },
+  {
+    "i": 21,
+    "text": "reserve a haircut for me sunday afternoon"
+  },
+  {
+    "i": 22,
+    "text": "book me for the beard and haircut combo tomorrow at 12"
+  },
+  {
+    "i": 23,
+    "text": "slot for combo, this afternoon"
+  },
+  {
+    "i": 24,
+    "text": "I want a haircut"
+  },
+  {
+    "i": 25,
+    "text": "can i schedule something for friday at 6pm"
+  },
+  {
+    "i": 26,
+    "text": "book a beard trim 8:30 thursday"
+  },
+  {
+    "i": 27,
+    "text": "get me in for a cut wednesday evening"
+  },
+  {
+    "i": 28,
+    "text": "appointment please, haircut, tomorrow 13:00"
+  },
+  {
+    "i": 29,
+    "text": "I'd like to book the combo monday at 10"
+  },
+  {
+    "i": 30,
+    "text": "haircut this saturday at 2 in the afternoon"
+  },
+  {
+    "i": 31,
+    "text": "schedule haircut and beard for sunday 16:00"
+  },
+  {
+    "i": 32,
+    "text": "tomorrow at 3pm, haircut"
+  },
+  {
+    "i": 33,
+    "text": "put me down for a beard trim tuesday at 5pm"
+  },
+  {
+    "i": 34,
+    "text": "Do you have anything for a haircut today?"
+  },
+  {
+    "i": 35,
+    "text": "Need a beard trim, today if possible"
+  },
+  {
+    "i": 36,
+    "text": "I'd love a beard tidy up tomorrow morning"
+  },
+  {
+    "i": 37,
+    "text": "morning haircut tomorrow?"
+  },
+  {
+    "i": 38,
+    "text": "i wanna book a cut for friday morning"
+  },
+  {
+    "i": 39,
+    "text": "haircut now if you have someone free"
+  },
+  {
+    "i": 40,
+    "text": "I need to cancel my appointment"
+  },
+  {
+    "i": 41,
+    "text": "cancel my 3pm today"
+  },
+  {
+    "i": 42,
+    "text": "please cancel the haircut tomorrow"
+  },
+  {
+    "i": 43,
+    "text": "can't make it, cancel my booking"
+  },
+  {
+    "i": 44,
+    "text": "cancel my beard trim on friday"
+  },
+  {
+    "i": 45,
+    "text": "I want to cancel my 11am"
+  },
+  {
+    "i": 46,
+    "text": "cancel everything for saturday"
+  },
+  {
+    "i": 47,
+    "text": "please cancel my combo appointment monday morning"
+  },
+  {
+    "i": 48,
+    "text": "cancel"
+  },
+  {
+    "i": 49,
+    "text": "I'd like to cancel the 4:30 haircut tomorrow"
+  },
+  {
+    "i": 50,
+    "text": "scrap my appointment today"
+  },
+  {
+    "i": 51,
+    "text": "cancel my booking for this evening"
+  },
+  {
+    "i": 52,
+    "text": "remove my haircut on wednesday"
+  },
+  {
+    "i": 53,
+    "text": "cancel my 2pm beard trim"
+  },
+  {
+    "i": 54,
+    "text": "I won't be coming, cancel please"
+  },
+  {
+    "i": 55,
+    "text": "cancel the combo I booked for sunday"
+  },
+  {
+    "i": 56,
+    "text": "can I move my appointment to friday?"
+  },
+  {
+    "i": 57,
+    "text": "I'd like to reschedule my haircut to 4pm"
+  },
+  {
+    "i": 58,
+    "text": "change my booking to tomorrow morning"
+  },
+  {
+    "i": 59,
+    "text": "push my 2pm to later, maybe 5"
+  },
+  {
+    "i": 60,
+    "text": "move my beard trim to saturday"
+  },
+  {
+    "i": 61,
+    "text": "reschedule my haircut for monday at 10am"
+  },
+  {
+    "i": 62,
+    "text": "can we move my combo to wednesday afternoon"
+  },
+  {
+    "i": 63,
+    "text": "shift my appointment to tomorrow"
+  },
+  {
+    "i": 64,
+    "text": "I need to reschedule, something came up"
+  },
+  {
+    "i": 65,
+    "text": "move the 3pm haircut to 4pm"
+  },
+  {
+    "i": 66,
+    "text": "change my beard trim to friday at noon"
+  },
+  {
+    "i": 67,
+    "text": "can you move my booking earlier, like 9am?"
+  },
+  {
+    "i": 68,
+    "text": "reschedule combo to sunday"
+  },
+  {
+    "i": 69,
+    "text": "move my haircut to this afternoon"
+  },
+  {
+    "i": 70,
+    "text": "I'd like to change the time of my appointment to 1:30"
+  },
+  {
+    "i": 71,
+    "text": "push my saturday haircut to monday"
+  },
+  {
+    "i": 72,
+    "text": "move my appointment to tomorrow evening"
+  },
+  {
+    "i": 73,
+    "text": "reschedule to friday morning please"
+  },
+  {
+    "i": 74,
+    "text": "what time do you open on sunday?"
+  },
+  {
+    "i": 75,
+    "text": "how much is a haircut?"
+  },
+  {
+    "i": 76,
+    "text": "are you open today?"
+  },
+  {
+    "i": 77,
+    "text": "do you do beard trims?"
+  },
+  {
+    "i": 78,
+    "text": "where are you located?"
+  },
+  {
+    "i": 79,
+    "text": "how much for haircut and beard together?"
+  },
+  {
+    "i": 80,
+    "text": "what are your hours tomorrow?"
+  },
+  {
+    "i": 81,
+    "text": "is Andriy working today?"
+  },
+  {
+    "i": 82,
+    "text": "how much does the combo cost?"
+  },
+  {
+    "i": 83,
+    "text": "do you take walk-ins?"
+  },
+  {
+    "i": 84,
+    "text": "what time do you close on friday?"
+  },
+  {
+    "i": 85,
+    "text": "how long does a beard trim take?"
+  },
+  {
+    "i": 86,
+    "text": "are you open on sunday?"
+  },
+  {
+    "i": 87,
+    "text": "what's the price of a cut?"
+  },
+  {
+    "i": 88,
+    "text": "do I need an appointment or can I just show up?"
+  },
+  {
+    "i": 89,
+    "text": "is there parking nearby?"
+  },
+  {
+    "i": 90,
+    "text": "how much would a haircut tomorrow cost?"
+  },
+  {
+    "i": 91,
+    "text": "what services do you offer?"
+  },
+  {
+    "i": 92,
+    "text": "can I pay by card?"
+  },
+  {
+    "i": 93,
+    "text": "are beard trims available on weekends?"
+  },
+  {
+    "i": 94,
+    "text": "do you have availability this week?"
+  },
+  {
+    "i": 95,
+    "text": "hi there"
+  },
+  {
+    "i": 96,
+    "text": "thanks!"
+  },
+  {
+    "i": 97,
+    "text": "ok see you then"
+  },
+  {
+    "i": 98,
+    "text": "hello"
+  },
+  {
+    "i": 99,
+    "text": "good morning"
+  },
+  {
+    "i": 100,
+    "text": "great, thank you so much"
+  },
+  {
+    "i": 101,
+    "text": "see you tomorrow"
+  },
+  {
+    "i": 102,
+    "text": "cool"
+  },
+  {
+    "i": 103,
+    "text": "perfect, thanks"
+  },
+  {
+    "i": 104,
+    "text": "yes"
+  },
+  {
+    "i": 105,
+    "text": "no problem"
+  },
+  {
+    "i": 106,
+    "text": "lol ok"
+  },
+  {
+    "i": 107,
+    "text": "alright"
+  },
+  {
+    "i": 108,
+    "text": "see you there"
+  }
+]

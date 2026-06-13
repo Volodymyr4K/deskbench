@@ -49,3 +49,6 @@ eval/results/*.raw.json
 
 # Transient eval comparison output (regenerated per LLM run)
 eval/results/latest.json
+
+# Local working instructions — not for public display
+CLAUDE.md

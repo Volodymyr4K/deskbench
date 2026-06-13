@@ -58,9 +58,9 @@ Current **rule baseline** (`$0`, ~0 ms, offline), committed in `eval/results/bas
 |------------|---------:|
 | intent     |   89.9%  |
 | service    |  100.0%  |
-| day        |   95.4%  |
+| day        |   98.2%  |
 | time       |   91.7%  |
-| full match |   77.1%  |
+| full match |   80.7%  |
 
 Per-intent F1: BOOK 88.3 · CANCEL 93.3 · RESCHEDULE 97.1 · QUESTION 92.7 · UNKNOWN 80.0.
 The confusion matrix shows exactly where it fails: **5 booking requests phrased without an
@@ -71,6 +71,13 @@ gap instead of hiding it.
 The baseline is **not** tuned to flatter these numbers. Since the benchmark was authored by
 the same assistant, tuning the parser against its own visible misses would be overfitting
 (there is no held-out split), so the honest baseline + "here's where it breaks" is kept as-is.
+
+**Labels were cross-checked.** Two independent blind labelers (separate Sonnet subagents
+given only the texts and the rubric, not the author's labels — see `eval/relabel/` and
+`npx tsx eval/relabel/agree.ts`) reached 99.1% intent agreement and 93.6% full-record
+agreement with the author. The disagreements caught 5 inconsistent author day-labels, which
+were reconciled to the independent majority. This reduces single-author bias — though all
+labelers are AI, not humans, so it is still not human ground truth.
 
 **LLM comparison (separate, older run):** on the earlier 35-example set, `Gemma-4-31b:free`
 scored 100% full match vs. that set's 82.9% baseline — but that was a different, smaller
