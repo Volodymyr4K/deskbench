@@ -93,7 +93,12 @@ cp .env.example .env          # set DATABASE_URL (local Postgres)
 npm run db:migrate            # create the schema
 npm run db:seed               # demo barbershop, staff, services, appointments
 npm run dev                   # operator board at http://localhost:3000
+npm test                      # unit tests (availability, parser, resolver)
 ```
+
+On the board, the **quick intake** box turns a free-text request
+("combo friday at 2pm") into a parsed intent and concrete bookable slots — all on the
+rule-based parser, no LLM.
 
 ## Status
 
@@ -103,7 +108,10 @@ npm run dev                   # operator board at http://localhost:3000
   (`lib/availability.ts`); operator board (`app/page.tsx`) — per-staff appointments with
   book/cancel; rule-based request parser (`lib/parse/rules.ts`); LLM parser path
   (`lib/parse/llm.ts`) behind the same `ParsedRequest` contract; the **evaluation harness**
-  (`eval/`) scoring baseline vs. LLM on a curated benchmark (numbers above). Verified end-to-end.
+  (`eval/`) scoring baseline vs. LLM on a curated benchmark (numbers above); a
+  request→booking loop (`lib/parse/resolve.ts` + the board's quick-intake box) that books
+  from free-text on the rule parser alone; and a unit-test suite (`npm test`, 20 tests over
+  availability, parser, resolver). Verified end-to-end.
 - **Next:** grow the benchmark and have someone other than the author label it; add more
   models (incl. a small one once rate limits allow) for the model-class comparison; wire the
   parser into an actual booking conversation and measure hallucinated-slot rate and real
