@@ -1,0 +1,44 @@
+{
+  "_about": "Curated front-desk request benchmark for deskbench. Hand-written, not real customer logs — labeled by hand to test intent + field extraction. Day/time use coarse tokens so scoring is deterministic and timezone-free. Some items are deliberately ambiguous to expose baseline limits.",
+  "examples": [
+    { "text": "Can I get a haircut tomorrow at 2pm?", "expected": { "intent": "BOOK", "service": "haircut", "day": "tomorrow", "time": "14:00" } },
+    { "text": "I'd like to book a beard trim this friday afternoon", "expected": { "intent": "BOOK", "service": "beard", "day": "friday", "time": "afternoon" } },
+    { "text": "Do you have anything for a haircut today?", "expected": { "intent": "BOOK", "service": "haircut", "day": "today", "time": null } },
+    { "text": "book me in for the combo on saturday morning", "expected": { "intent": "BOOK", "service": "combo", "day": "saturday", "time": "morning" } },
+    { "text": "haircut at 10am please", "expected": { "intent": "BOOK", "service": "haircut", "day": null, "time": "10:00" } },
+    { "text": "I want to come in tomorrow for a cut", "expected": { "intent": "BOOK", "service": "haircut", "day": "tomorrow", "time": null } },
+    { "text": "any openings monday for haircut and beard?", "expected": { "intent": "BOOK", "service": "combo", "day": "monday", "time": null } },
+    { "text": "Need a beard trim, today if possible", "expected": { "intent": "BOOK", "service": "beard", "day": "today", "time": null } },
+    { "text": "Can I schedule a haircut for 3:30 on wednesday", "expected": { "intent": "BOOK", "service": "haircut", "day": "wednesday", "time": "15:30" } },
+    { "text": "appointment for combo tonight", "expected": { "intent": "BOOK", "service": "combo", "day": "today", "time": "evening" } },
+    { "text": "get me a slot for a haircut", "expected": { "intent": "BOOK", "service": "haircut", "day": null, "time": null } },
+    { "text": "I'd love a beard tidy up tomorrow morning", "expected": { "intent": "BOOK", "service": "beard", "day": "tomorrow", "time": "morning" } },
+    { "text": "Could I come by at noon today for a haircut?", "expected": { "intent": "BOOK", "service": "haircut", "day": "today", "time": "12:00" } },
+    { "text": "I'll take the 2pm slot", "expected": { "intent": "BOOK", "service": null, "day": null, "time": "14:00" } },
+    { "text": "book haircut friday 9", "expected": { "intent": "BOOK", "service": "haircut", "day": "friday", "time": "09:00" } },
+
+    { "text": "I need to cancel my appointment", "expected": { "intent": "CANCEL", "service": null, "day": null, "time": null } },
+    { "text": "cancel my 3pm today", "expected": { "intent": "CANCEL", "service": null, "day": "today", "time": "15:00" } },
+    { "text": "please cancel the haircut tomorrow", "expected": { "intent": "CANCEL", "service": "haircut", "day": "tomorrow", "time": null } },
+    { "text": "can't make it, cancel my booking", "expected": { "intent": "CANCEL", "service": null, "day": null, "time": null } },
+
+    { "text": "can I move my appointment to friday?", "expected": { "intent": "RESCHEDULE", "service": null, "day": "friday", "time": null } },
+    { "text": "I'd like to reschedule my haircut to 4pm", "expected": { "intent": "RESCHEDULE", "service": "haircut", "day": null, "time": "16:00" } },
+    { "text": "change my booking to tomorrow morning", "expected": { "intent": "RESCHEDULE", "service": null, "day": "tomorrow", "time": "morning" } },
+    { "text": "push my 2pm to later, maybe 5", "expected": { "intent": "RESCHEDULE", "service": null, "day": null, "time": "17:00" } },
+    { "text": "move my beard trim to saturday", "expected": { "intent": "RESCHEDULE", "service": "beard", "day": "saturday", "time": null } },
+
+    { "text": "what time do you open on sunday?", "expected": { "intent": "QUESTION", "service": null, "day": "sunday", "time": null } },
+    { "text": "how much is a haircut?", "expected": { "intent": "QUESTION", "service": "haircut", "day": null, "time": null } },
+    { "text": "are you open today?", "expected": { "intent": "QUESTION", "service": null, "day": "today", "time": null } },
+    { "text": "do you do beard trims?", "expected": { "intent": "QUESTION", "service": "beard", "day": null, "time": null } },
+    { "text": "where are you located?", "expected": { "intent": "QUESTION", "service": null, "day": null, "time": null } },
+    { "text": "how much for haircut and beard together?", "expected": { "intent": "QUESTION", "service": "combo", "day": null, "time": null } },
+    { "text": "what are your hours tomorrow?", "expected": { "intent": "QUESTION", "service": null, "day": "tomorrow", "time": null } },
+    { "text": "is Andriy working today?", "expected": { "intent": "QUESTION", "service": null, "day": "today", "time": null } },
+
+    { "text": "hi there", "expected": { "intent": "UNKNOWN", "service": null, "day": null, "time": null } },
+    { "text": "thanks!", "expected": { "intent": "UNKNOWN", "service": null, "day": null, "time": null } },
+    { "text": "ok see you then", "expected": { "intent": "UNKNOWN", "service": null, "day": null, "time": null } }
+  ]
+}

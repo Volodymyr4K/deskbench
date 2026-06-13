@@ -44,6 +44,25 @@ Each capability is benchmarked against simpler baselines on real dialogue data, 
 Comparisons are reproducible: fixed dataset, fixed prompts, a script anyone can re-run.
 Honest conclusions over flattering ones — including where the LLM is not worth it.
 
+### Current baseline (measured, not claimed)
+
+Run `npm run eval`. On a curated 35-example benchmark of front-desk requests
+(`eval/dataset.json` — hand-written, not real customer logs), the rule-based parser
+(`lib/parse/rules.ts`) scores:
+
+| field      | accuracy |
+|------------|---------:|
+| intent     |   91.4%  |
+| service    |  100.0%  |
+| day        |  100.0%  |
+| time       |   91.4%  |
+| full match |   82.9%  |
+
+The 6 misses are real and unhidden (ambiguous "do you have anything…", an unguessable
+am/pm, two times in one sentence). The parser was **not** tuned to flatter these numbers —
+this is the honest bar. An LLM assistant has to beat **82.9% full match** here to justify
+its cost and latency. Full results: `eval/results/baseline.json`.
+
 ## Tech stack
 
 - **App:** Next.js (App Router), TypeScript
@@ -65,15 +84,16 @@ npm run dev                   # operator board at http://localhost:3000
 
 **Early development — honest snapshot:**
 
-- **Done:** data model (Prisma/Postgres), rule-based slot-availability engine
-  (`lib/availability.ts`), and an operator board (`app/page.tsx`) that shows a day's
-  appointments per staff and lets you book/cancel free slots. Verified end-to-end on the
-  seeded demo data.
-- **Next:** the evaluation harness — measuring an LLM/ML assistant against the rule-based
-  baseline on real dialogue data (accuracy, hallucinated-slot rate, cost per conversation).
+- **Done:** data model (Prisma/Postgres); rule-based slot-availability engine
+  (`lib/availability.ts`); operator board (`app/page.tsx`) — per-staff appointments with
+  book/cancel; rule-based request parser (`lib/parse/`) and the **evaluation harness**
+  (`eval/`) scoring it on a curated benchmark (numbers above). Verified end-to-end.
+- **Next:** add the LLM parser path behind the same `ParsedRequest` contract and run it
+  through the harness — measuring accuracy, hallucinated-slot rate, and cost per
+  conversation against this baseline. Then a larger benchmark.
 - **Known simplifications:** times are computed in the server's local timezone (per-business
   timezone + DST is a real TODO); booking is walk-in (no client capture yet); single demo
-  business.
+  business; the benchmark is curated by hand, not drawn from real traffic.
 
 This README tracks the real state, not an aspirational one.
 

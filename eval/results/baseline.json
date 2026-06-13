@@ -1,0 +1,15 @@
+{
+  "generatedAt": "2026-06-13T09:16:53.660Z",
+  "datasetSize": 35,
+  "results": [
+    {
+      "parser": "rule-baseline",
+      "n": 35,
+      "intent": 0.9142857142857143,
+      "service": 1,
+      "day": 1,
+      "time": 0.9142857142857143,
+      "fullMatch": 0.8285714285714286
+    }
+  ]
+}
