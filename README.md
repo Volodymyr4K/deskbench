@@ -44,24 +44,39 @@ Each capability is benchmarked against simpler baselines on real dialogue data, 
 Comparisons are reproducible: fixed dataset, fixed prompts, a script anyone can re-run.
 Honest conclusions over flattering ones — including where the LLM is not worth it.
 
-### Current baseline (measured, not claimed)
+### Measured results (not claimed)
 
-Run `npm run eval`. On a curated 35-example benchmark of front-desk requests
-(`eval/dataset.json` — hand-written, not real customer logs), the rule-based parser
-(`lib/parse/rules.ts`) scores:
+On a curated 35-example benchmark of front-desk requests (`eval/dataset.json` —
+hand-written, not real customer logs), scored on four fields plus a strict
+"all four correct" rate:
 
-| field      | accuracy |
-|------------|---------:|
-| intent     |   91.4%  |
-| service    |  100.0%  |
-| day        |  100.0%  |
-| time       |   91.4%  |
-| full match |   82.9%  |
+| parser                     | intent | service |  day  |  time | full match |
+|----------------------------|-------:|--------:|------:|------:|-----------:|
+| rule baseline (`$0`, ~0ms) |  91.4% |   100%  |  100% | 91.4% |   **82.9%** |
+| Gemma-4-31b (free, LLM)    |   100% |   100%  |  100% |  100% |    **100%** |
 
-The 6 misses are real and unhidden (ambiguous "do you have anything…", an unguessable
-am/pm, two times in one sentence). The parser was **not** tuned to flatter these numbers —
-this is the honest bar. An LLM assistant has to beat **82.9% full match** here to justify
-its cost and latency. Full results: `eval/results/baseline.json`.
+Reproduce: `npm run eval` (baseline only, offline, `$0`) or
+`npm run eval -- --model google/gemma-4-31b-it:free` (needs `OPENAI_API_KEY`).
+Baseline result is committed in `eval/results/baseline.json`, the comparison in
+`eval/results/latest.json`.
+
+**What this says — and what it doesn't (read this):**
+
+- On this set the LLM clears the bar: it gets all 6 cases the baseline misses
+  (ambiguous "do you have anything…", an unguessable am/pm, two times in one sentence).
+  The baseline was **not** tuned to flatter its numbers.
+- **35 examples is tiny.** 100% here is not 100% in general — the confidence interval is wide.
+- The benchmark was **authored by the same person who reads the LLM's answers**, so on
+  genuinely ambiguous items the LLM partly scores for agreeing with the author's labels,
+  not against an external ground truth. This inflates the LLM's apparent edge.
+- **Cost is not just dollars.** The baseline answers in ~0ms, offline, with no dependency.
+  The Gemma run took ~302s for 35 calls — most of that is a self-imposed 3s delay to stay
+  under the free tier's rate limit, but real per-call latency is still several seconds. For
+  a live front desk that latency and the external dependency are a real cost the accuracy
+  win has to outweigh.
+- A small-model comparison (llama-3.2-3b) was attempted to test the "model class vs.
+  information" question, but free-tier rate limits (shared quota) drowned it in HTTP 429s,
+  so those numbers are not trustworthy and are deliberately **not** reported here. Deferred.
 
 ## Tech stack
 
@@ -86,11 +101,13 @@ npm run dev                   # operator board at http://localhost:3000
 
 - **Done:** data model (Prisma/Postgres); rule-based slot-availability engine
   (`lib/availability.ts`); operator board (`app/page.tsx`) — per-staff appointments with
-  book/cancel; rule-based request parser (`lib/parse/`) and the **evaluation harness**
-  (`eval/`) scoring it on a curated benchmark (numbers above). Verified end-to-end.
-- **Next:** add the LLM parser path behind the same `ParsedRequest` contract and run it
-  through the harness — measuring accuracy, hallucinated-slot rate, and cost per
-  conversation against this baseline. Then a larger benchmark.
+  book/cancel; rule-based request parser (`lib/parse/rules.ts`); LLM parser path
+  (`lib/parse/llm.ts`) behind the same `ParsedRequest` contract; the **evaluation harness**
+  (`eval/`) scoring baseline vs. LLM on a curated benchmark (numbers above). Verified end-to-end.
+- **Next:** grow the benchmark and have someone other than the author label it; add more
+  models (incl. a small one once rate limits allow) for the model-class comparison; wire the
+  parser into an actual booking conversation and measure hallucinated-slot rate and real
+  cost per conversation end-to-end.
 - **Known simplifications:** times are computed in the server's local timezone (per-business
   timezone + DST is a real TODO); booking is walk-in (no client capture yet); single demo
   business; the benchmark is curated by hand, not drawn from real traffic.

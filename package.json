@@ -10,7 +10,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
-    "eval": "tsx eval/run.ts"
+    "eval": "tsx --env-file=.env eval/run.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
