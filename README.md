@@ -1,5 +1,7 @@
 # deskbench
 
+[![CI](https://github.com/Volodymyr4K/deskbench/actions/workflows/ci.yml/badge.svg)](https://github.com/Volodymyr4K/deskbench/actions/workflows/ci.yml)
+
 A front-desk assistant for small service businesses — built around one idea:
 **before you ship "AI", measure whether you actually need it.**
 
