@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { getBusinessStats } from "@/lib/stats";
 
+// Reads the DB per request — never statically prerendered (build has no DB).
+export const dynamic = "force-dynamic";
+
 const DEMO_SLUG = "demo";
 const RANGE_DAYS = 30;
 

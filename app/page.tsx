@@ -10,6 +10,9 @@ import { todayInZone, formatTimeInZone, formatDayInZone, formatDateInstantInZone
 
 const DEMO_SLUG = "demo";
 
+// Reads the DB per request — never statically prerendered (build has no DB).
+export const dynamic = "force-dynamic";
+
 function fmtPrice(cents: number): string {
   return new Intl.NumberFormat("uk-UA", { style: "currency", currency: "UAH", maximumFractionDigits: 0 }).format(
     cents / 100,
