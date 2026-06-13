@@ -15,6 +15,17 @@ simple rule-based logic, and where it does not.**
 > hypothesis to test, on real data, against cheaper baselines — and ships the LLM only
 > where the numbers justify the cost.
 
+A customer types a request in plain language; a `$0` rule-based parser turns it into a
+bookable action — no LLM:
+
+![Free-text intake parsed into bookable slots](docs/intake.png)
+
+**Measured so far** (109-example benchmark, intent classification, 5-fold held-out CV):
+the rule baseline scores **89.9%** [82.8–94.3] and a classical-ML baseline (Naive Bayes)
+**79.8%** [71.3–86.3]. The hand-rules win — so the bar an LLM has to clear is the rules, not
+ML. (The intervals overlap, so honestly: "rules are at least as good," not a conclusive win.
+The LLM-vs-rules run on this set is the next experiment.)
+
 ## Why this exists
 
 The market is full of front-desk tools that staple an LLM onto a calendar and call it
@@ -34,6 +45,16 @@ simpler approach stays, and we say so out loud.
 - **Reminders** — reduce no-shows via timely notifications.
 - **Routine Q&A** — answer common client questions (hours, prices, location) without staff.
 - **Operator view** — a simple, readable calendar for non-technical staff, not a CRM monster.
+
+The operator board (per-staff appointments, day navigation, book/cancel/reschedule/no-show,
+all in the business timezone):
+
+![Operator board](docs/board.png)
+
+A `/stats` view measures the business — starting with the no-show rate, because you can't
+honestly claim to reduce no-shows without measuring them first:
+
+![Business stats](docs/stats.png)
 
 ## The measurement layer (the differentiator)
 
