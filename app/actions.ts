@@ -65,6 +65,20 @@ export async function cancelAppointment(formData: FormData): Promise<void> {
   revalidatePath("/");
 }
 
+/** Mark a past appointment as completed (the client showed up). */
+export async function markCompleted(formData: FormData): Promise<void> {
+  const id = String(formData.get("id"));
+  await prisma.appointment.update({ where: { id }, data: { status: "COMPLETED" } });
+  revalidatePath("/");
+}
+
+/** Mark a past appointment as a no-show (the client did not come). */
+export async function markNoShow(formData: FormData): Promise<void> {
+  const id = String(formData.get("id"));
+  await prisma.appointment.update({ where: { id }, data: { status: "NO_SHOW" } });
+  revalidatePath("/");
+}
+
 /** Move an existing appointment to a new staff member and/or start time. */
 export async function rescheduleAppointment(formData: FormData): Promise<void> {
   const id = String(formData.get("id"));

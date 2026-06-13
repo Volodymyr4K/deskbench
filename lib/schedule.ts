@@ -57,7 +57,7 @@ export async function getOperatorBoard(slug: string, dateParam?: string, service
     return { id: st.id, name: st.name, role: st.role, appointments: myAppointments, freeSlots: slots };
   });
 
-  return { business, tz, day, services: business.services, selectedService, staff };
+  return { business, tz, day, now, services: business.services, selectedService, staff };
 }
 
 export type OperatorBoard = NonNullable<Awaited<ReturnType<typeof getOperatorBoard>>>;

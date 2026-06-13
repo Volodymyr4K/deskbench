@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { getOperatorBoard, type OperatorBoard } from "@/lib/schedule";
-import { bookSlot, cancelAppointment, rescheduleAppointment } from "@/app/actions";
+import { bookSlot, cancelAppointment, rescheduleAppointment, markCompleted, markNoShow } from "@/app/actions";
 import { prisma } from "@/lib/prisma";
 import { ruleBasedParse } from "@/lib/parse/rules";
 import { resolveDay, filterSlotsByTime, appointmentMatchesRequest } from "@/lib/parse/resolve";
@@ -63,9 +64,10 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
     );
   }
 
-  const { business, tz, day, services, selectedService, staff } = board;
+  const { business, tz, day, now, services, selectedService, staff } = board;
   const fmtTime = (i: Date) => formatTimeInZone(i, tz);
   const fmtDayInstant = (i: Date) => formatDateInstantInZone(i, tz);
+  const nowMs = now.getTime();
 
   // URL helper that preserves the relevant params and overrides the given ones.
   const withParams = (overrides: Record<string, string | undefined>) => {
@@ -153,6 +155,7 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
               <a href={withParams({ date: toDateParam(todayInZone(tz)) })} className="text-xs text-gray-400 underline hover:text-gray-700">today</a>
             )}
             <span className="text-xs text-gray-300">{tz}</span>
+            <Link href="/stats" className="text-xs text-gray-400 underline hover:text-gray-700">stats</Link>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -337,15 +340,31 @@ export default async function OperatorBoard({ searchParams }: { searchParams: Pr
                     <span className="text-gray-500">{a.service.name}</span>
                     {a.client && <span className="text-gray-400"> · {a.client.name}</span>}
                   </span>
-                  {!rescheduling && (
-                    <span className="flex gap-2">
-                      <a href={rescheduleHref(a.id)} className="text-xs text-amber-600 hover:text-amber-800">move</a>
-                      <form action={cancelAppointment}>
-                        <input type="hidden" name="id" value={a.id} />
-                        <button type="submit" className="text-xs text-gray-400 hover:text-red-600">cancel</button>
-                      </form>
-                    </span>
-                  )}
+                  {!rescheduling &&
+                    (a.status === "COMPLETED" ? (
+                      <span className="text-xs text-emerald-600">✓ done</span>
+                    ) : a.startAt.getTime() < nowMs ? (
+                      // Past appointment: record the outcome.
+                      <span className="flex gap-2">
+                        <form action={markCompleted}>
+                          <input type="hidden" name="id" value={a.id} />
+                          <button type="submit" className="text-xs text-emerald-600 hover:text-emerald-800">done</button>
+                        </form>
+                        <form action={markNoShow}>
+                          <input type="hidden" name="id" value={a.id} />
+                          <button type="submit" className="text-xs text-gray-400 hover:text-red-600">no-show</button>
+                        </form>
+                      </span>
+                    ) : (
+                      // Upcoming appointment: move or cancel.
+                      <span className="flex gap-2">
+                        <a href={rescheduleHref(a.id)} className="text-xs text-amber-600 hover:text-amber-800">move</a>
+                        <form action={cancelAppointment}>
+                          <input type="hidden" name="id" value={a.id} />
+                          <button type="submit" className="text-xs text-gray-400 hover:text-red-600">cancel</button>
+                        </form>
+                      </span>
+                    ))}
                 </li>
               ))}
             </ul>

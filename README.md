@@ -143,7 +143,10 @@ rule-based parser, no LLM.
   name/phone (or walk-in); an operator reschedule mode (move an appointment to a new
   slot/staff); a unit-test suite (`npm test`, 28 tests over availability, parser, resolver,
   date helpers); and Playwright e2e (`npm run e2e`) that drives book / cancel / reschedule /
-  intake in a real browser against an isolated test database.
+  intake in a real browser against an isolated test database; appointment lifecycle
+  (mark completed / no-show on past appointments) and a `/stats` view that measures the
+  business — no-show rate, cancellation rate, status breakdown, and manual-vs-assistant
+  source split (`lib/stats.ts`, unit-tested).
 - **Next:** grow the benchmark and have someone other than the author label it; add more
   models (incl. a small one once rate limits allow) for the model-class comparison; wire the
   parser into an actual booking conversation and measure hallucinated-slot rate and real
